@@ -7,6 +7,7 @@ import Button from '@mui/material/Button';
 function App() {
   const [url, setUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
+  const ip = "127.0.0.1:8000"
 
   const handleSubmit = async () => {
     const data = {
@@ -15,13 +16,14 @@ function App() {
     };
 
     try {
-      const response = await fetch('/shorten', {
+      const response = await fetch('localhost:${ip}/shorten', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
       });
+      console.log(JSON.stringify(data))
 
       if (response.ok) {
         const result = await response.json();
