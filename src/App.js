@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import SignIn from './signin/signin.js';
 
 function App() {
   const [url, setUrl] = useState('');
@@ -16,7 +17,7 @@ function App() {
     };
 
     try {
-      const response = await fetch('localhost:${ip}/shorten', {
+      const response = await fetch(`http://${ip}/url/shorten`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,6 +44,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
+        <SignIn />
         <TextField
           id="url-field"
           label="Enter URL"
