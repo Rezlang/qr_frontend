@@ -1,0 +1,12 @@
+.input-line {
+    justify-content: center;
+    gap: 5%;
+    display: flex;
+    height: 56px;
+    margin-bottom: 50px;
+  }
+  
+  .short-link {
+    margin-bottom: 50px;
+    justify-content: center;
+  }
