@@ -4,7 +4,8 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { DefaultCopyField } from '@eisberg-labs/mui-copy-field';
 import { shortenUrl } from '../../services/api';
-import './URLShortener.css';
+import QRCode from 'react-qr-code'; // Import the QR code component
+import './QRGenerator.css';
 
 const UrlShortener = () => {
   const [url, setUrl] = useState('');
@@ -24,21 +25,20 @@ const UrlShortener = () => {
         console.log('Shortened URL:', result);
         // Construct the full URL by appending the shortened URL to the current origin.
         const fullShortenedUrl = `${window.location.origin}/go/${result.shortened_url}`;
+        // Set the state so that the QR code can be generated.
         setShortenedUrl(fullShortenedUrl);
-        console.log(`Shortened URL: ${fullShortenedUrl}`);
       } else {
-        console.log("Url is empty")
+        console.log("URL is empty");
       }
-      } catch (error) {
-        console.error('Error:', error);
-        console.log('Failed to shorten URL. Please try again.');
-      }
-      
+    } catch (error) {
+      console.error('Error:', error);
+      console.log('Failed to shorten URL. Please try again.');
+    }
   };
 
   return (
     <div className="short-link">
-      <h1>Shorten URL</h1>
+      <h1>Generate QR</h1>
       <div className="input-line">
         <TextField
           id="url-field"
@@ -64,12 +64,16 @@ const UrlShortener = () => {
           Submit URL
         </Button>
       </div>
-      <DefaultCopyField
-        Readonly
-        id="url-response"
-        label="Copy Short URL"
-        value={shortenedUrl}
-      />
+
+      {/* Display the QR code only if a shortened URL exists */}
+      {shortenedUrl && (
+        <div className="qr-code-container" style={{ marginTop: '24px' }}>
+          <h2>Your Shortened URL QR Code</h2>
+          <QRCode value={shortenedUrl} />
+          {/* Optionally display the shortened URL as text */}
+          <p>{shortenedUrl}</p>
+        </div>
+      )}
     </div>
   );
 };
