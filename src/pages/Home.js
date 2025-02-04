@@ -9,7 +9,6 @@ const Home = () => {
       <header className="App-header">
         {/* You can include your logo or other header content here */}
       </header>
-      <SignIn />
       <UrlShortener />
     </div>
   );
