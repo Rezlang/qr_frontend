@@ -17,6 +17,9 @@ import ForgotPassword from './ForgotPassword';
 import AppTheme from './theme/AppTheme';
 import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
+import { useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../App';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -66,6 +69,10 @@ export default function SignIn(props) {
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
   const [open, setOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(true);
+  const [user, setUser] = React.useState(null);
+
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -75,15 +82,47 @@ export default function SignIn(props) {
     setOpen(false);
   };
 
+  React.useEffect(() => {
+    // Subscribe to auth state changes
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      if (user) {
+        // Only redirect after confirming auth state
+        // navigate("/home", {replace : true});
+      }
+      setLoading(false);
+    });
+    // Cleanup on unmount
+    return () => unsubscribe();
+  }, [navigate]);
+
+
+
   const handleSubmit = (event) => {
     if (emailError || passwordError) {
+      console.log("Failed to handle submission");
       event.preventDefault();
       return;
     }
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
+    // console.log({
+    //   email: data.get('email'),
+    //   password: data.get('password'),
+    // });
+
+    const email = data.get('email');
+    const password = data.get('password');
+    console.log("Attempting to create user");
+
+    createUserWithEmailAndPassword(auth, email, password).then((userCredential) => {
+      // Successful sign-in, redirect to a real page 
+      setUser(userCredential.user);
+    }).catch((error) => {
+      const errorCode = error.code;
+      const errorMsg = error.message;
+      console.log({
+        errCode: errorCode,
+        errMsg: errorMsg
+      })
     });
   };
 
@@ -113,6 +152,8 @@ export default function SignIn(props) {
 
     return isValid;
   };
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <AppTheme {...props}>
