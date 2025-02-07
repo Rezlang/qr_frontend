@@ -9,7 +9,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/go/:shortenedUrl" element={<RedirectPage />} />
+        <Route path="/:shortenedUrl" element={<RedirectPage />} />
       </Routes>
     </BrowserRouter>
   );

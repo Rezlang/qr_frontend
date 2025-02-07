@@ -29,8 +29,8 @@ const QRGenerator = () => {
         console.log('Submitting:', data);
         const result = await shortenUrl(data);
         console.log('Shortened URL:', result);
-        // Construct the full URL by appending the shortened URL to the current origin.
-        const fullShortenedUrl = `${window.location.origin}/go/${result.shortened_url}`;
+        // **Modified:** Construct the shortened URL to match the backend route.
+        const fullShortenedUrl = `${window.location.origin}/${result.shortened_url}`;
         setShortenedUrl(fullShortenedUrl);
       } else {
         console.log("URL is empty");
@@ -68,64 +68,53 @@ const QRGenerator = () => {
     }
   };
 
-  // Download the QR code as an SVG image by serializing the SVG element
-// Download the QR code as an SVG image with the icon embedded
-const handleDownloadSVG = () => {
-  if (qrRef.current) {
-    const svg = qrRef.current.querySelector('svg');
-    if (svg) {
-      // Clone the SVG so that we don't modify the on-screen version
-      const clonedSvg = svg.cloneNode(true);
+  // Download the QR code as an SVG image with the icon embedded
+  const handleDownloadSVG = () => {
+    if (qrRef.current) {
+      const svg = qrRef.current.querySelector('svg');
+      if (svg) {
+        // Clone the SVG so that we don't modify the on-screen version
+        const clonedSvg = svg.cloneNode(true);
 
-      // If an icon was uploaded, create an <image> element to embed it in the SVG
-      if (uploadedIcon) {
-        const xmlns = "http://www.w3.org/2000/svg";
+        if (uploadedIcon) {
+          const xmlns = "http://www.w3.org/2000/svg";
+          const imageEl = document.createElementNS(xmlns, 'image');
+          imageEl.setAttributeNS(null, 'href', uploadedIcon);
 
-        // Create the <image> element
-        const imageEl = document.createElementNS(xmlns, 'image');
-        imageEl.setAttributeNS(null, 'href', uploadedIcon);
+          // Assume the SVG viewBox is "0 0 256 256" (adjust as needed)
+          const viewBox = clonedSvg.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, 256, 256];
+          const [x, y, width, height] = viewBox;
+          const iconWidth = width * 0.2;
+          const iconHeight = height * 0.2;
+          const iconX = x + (width - iconWidth) / 2;
+          const iconY = y + (height - iconHeight) / 2;
 
-        // Determine the dimensions and positioning
-        // You might need to adjust these values based on your QR code's size and desired icon size
-        // For this example, we'll assume the SVG has a viewBox like "0 0 256 256"
-        // and we want the icon to be 20% of that size.
-        const viewBox = clonedSvg.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, 256, 256];
-        const [x, y, width, height] = viewBox;
-        const iconWidth = width * 0.2;
-        const iconHeight = height * 0.2;
-        const iconX = x + (width - iconWidth) / 2;
-        const iconY = y + (height - iconHeight) / 2;
+          imageEl.setAttributeNS(null, 'x', iconX);
+          imageEl.setAttributeNS(null, 'y', iconY);
+          imageEl.setAttributeNS(null, 'width', iconWidth);
+          imageEl.setAttributeNS(null, 'height', iconHeight);
 
-        imageEl.setAttributeNS(null, 'x', iconX);
-        imageEl.setAttributeNS(null, 'y', iconY);
-        imageEl.setAttributeNS(null, 'width', iconWidth);
-        imageEl.setAttributeNS(null, 'height', iconHeight);
+          clonedSvg.appendChild(imageEl);
+        }
 
-        // Append the image element to the cloned SVG
-        clonedSvg.appendChild(imageEl);
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(clonedSvg);
+        if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+          svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        if (!svgString.match(/^<svg[^>]+"http:\/\/www\.w3\.org\/1999\/xlink"/)) {
+          svgString = svgString.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+        }
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'qr-code.svg';
+        link.click();
+        URL.revokeObjectURL(url);
       }
-
-      // Serialize the modified SVG
-      const serializer = new XMLSerializer();
-      let svgString = serializer.serializeToString(clonedSvg);
-      // Ensure proper namespaces are set.
-      if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
-        svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
-      if (!svgString.match(/^<svg[^>]+"http:\/\/www\.w3\.org\/1999\/xlink"/)) {
-        svgString = svgString.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-      }
-      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'qr-code.svg';
-      link.click();
-      URL.revokeObjectURL(url);
     }
-  }
-};
-
+  };
 
   return (
     <div className="qr-gen">
@@ -196,11 +185,11 @@ const handleDownloadSVG = () => {
                   position: 'absolute',
                   top: '50%',
                   left: '50%',
-                  width: '20%',     // Adjust as needed
-                  height: '20%',    // Adjust as needed
+                  width: '20%',
+                  height: '20%',
                   objectFit: 'contain',
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: 'none' // Allow clicks to pass through
+                  pointerEvents: 'none'
                 }}
               />
             )}
