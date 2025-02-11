@@ -1,16 +1,16 @@
 // src/pages/Home.js
 import React from 'react';
-import SignIn from '../components/signin/signin';
+import Signup from '../components/signin/signup';
 
-const Landing = () => {
+const SignUp = () => {
   return (
     <div className="App">
       <header className="App-header">
         {/* You can include your logo or other header content here */}
       </header>
-      <SignIn />
+      <Signup />
     </div>
   );
 };
 
-export default Landing;
+export default SignUp;

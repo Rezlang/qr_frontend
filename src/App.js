@@ -3,7 +3,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import RedirectPage from './pages/RedirectPage';
-import Landing from './pages/Landing';
+import SignUp from './pages/SignUp';
+import SignIn from './pages/SignIn';
 import { initializeApp } from 'firebase/app';
 import { initializeAnalytics } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
@@ -15,7 +16,8 @@ function App() {
       <Routes>
         <Route path="/home" element={<Home />} />
         <Route path="/go/:shortenedUrl" element={<RedirectPage />} />
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<SignUp />} />
+        <Route path='/signin' element={<SignIn />} />
       </Routes>
     </BrowserRouter>
   );
