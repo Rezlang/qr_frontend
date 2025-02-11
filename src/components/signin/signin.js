@@ -18,7 +18,7 @@ import AppTheme from './theme/AppTheme';
 import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../App';
 
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -73,7 +73,6 @@ export default function SignIn(props) {
   const [loading, setLoading] = React.useState(true);
   const [user, setUser] = React.useState(null);
 
-
   const handleClickOpen = () => {
     setOpen(true);
   };
@@ -84,10 +83,12 @@ export default function SignIn(props) {
 
   React.useEffect(() => {
     // Subscribe to auth state changes
-    const unsubscribe = auth.onAuthStateChanged(() => {
-      if (user) {
-        // Only redirect after confirming auth state
-        // navigate("/home", {replace : true});
+    const unsubscribe = onAuthStateChanged(auth, (userCredential) => {
+      if (userCredential) {
+        // User is signed in
+        setUser(userCredential.user)
+        navigate("/home", {replace : true});
+
       }
       setLoading(false);
     });
@@ -95,35 +96,28 @@ export default function SignIn(props) {
     return () => unsubscribe();
   }, [navigate]);
 
-
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    
     if (emailError || passwordError) {
       console.log("Failed to handle submission");
-      event.preventDefault();
       return;
     }
     const data = new FormData(event.currentTarget);
-    // console.log({
-    //   email: data.get('email'),
-    //   password: data.get('password'),
-    // });
-
     const email = data.get('email');
     const password = data.get('password');
-    console.log("Attempting to create user");
 
-    createUserWithEmailAndPassword(auth, email, password).then((userCredential) => {
-      // Successful sign-in, redirect to a real page 
-      setUser(userCredential.user);
-    }).catch((error) => {
-      const errorCode = error.code;
-      const errorMsg = error.message;
-      console.log({
-        errCode: errorCode,
-        errMsg: errorMsg
-      })
-    });
+    try {
+      let response = await signInWithEmailAndPassword(auth,
+        email,
+        password,
+      );
+      if (response && response.user) {
+        setUser(response.user);
+      }
+    } catch (e) {
+      console.error(e.message);
+    }
   };
 
   const validateInputs = () => {
