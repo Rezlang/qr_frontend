@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import RedirectPage from './pages/RedirectPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/:shortenedUrl" element={<RedirectPage />} />
+        <Route path="/:shortenedUrl/analytics" element={<AnalyticsPage />} />
       </Routes>
     </BrowserRouter>
   );
