@@ -1,4 +1,4 @@
-// src/pages/Home.js
+// src/pages/Signin.js
 import React from 'react';
 import Signin from '../components/signin/signin';
 const SignIn = () => {

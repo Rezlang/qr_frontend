@@ -1,4 +1,4 @@
-// src/pages/Home.js
+// src/pages/SignUp.js
 import React from 'react';
 import Signup from '../components/signin/signup';
 
