@@ -12,8 +12,8 @@ const Home = () => {
         {/* You can include your logo or other header content here */}
       </header>
       <SignIn />
-          <UrlShortener />
-          <QRGenerator/>
+      <UrlShortener />
+      <QRGenerator />
     </div>
   );
 };

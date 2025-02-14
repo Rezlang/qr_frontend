@@ -1,19 +1,52 @@
-.input-line {
-    justify-content: center;
-    gap: 5%;
-    display: flex;
-    height: 56px;
-    margin-bottom: 50px;
-  }
-  
-  .short-link {
-    display: flex;
-    flex-direction: column;
-    margin: 0 10% 50px 10%;
-    border-radius: 8px;           /* Rounded corners */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.25);
-    padding: 0 20px 20px 20px;
+/* Define color variables for light/dark mode (optional if you already have them) */
+:root {
+  --background-light: #ffff;
+  --background-dark: #121212;
+  --text-light: #000000;
+  --text-dark: #ffffff;
+  --accent-color: #1976d2;
+}
 
-  }
+/* Container for short-link section */
+.short-link {
+  display: flex;
+  flex-direction: column;
+  /* Center and constrain width */
+  max-width: 700px;
+  margin: 2rem auto; 
+  padding: 2rem;
+
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  /* Light mode defaults */
+  background-color: var(--background-light);
+  color: var(--text-light);
+
+  /* Smooth transitions between light/dark mode */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Optional heading style inside .short-link */
+.short-link h1 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+/* Dark mode override (if you apply a .dark-mode class to the body or a parent element) */
+.dark-mode .short-link {
+  background-color: var(--background-dark);
+  color: var(--text-dark);
+}
+
+/* Flex container for the URL/alias input fields and button */
+.input-line {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  height: 56px;
+  margin-bottom: 2rem; /* Adjust as needed */
+}
