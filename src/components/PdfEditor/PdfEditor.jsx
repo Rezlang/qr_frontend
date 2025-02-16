@@ -34,8 +34,8 @@ const PdfEditor = () => {
       const newAnnotation = {
         id: Date.now(),
         type: 'image',
-        file, // will be used by pdf-lib (must be a PNG or JPG)
-        url,  // used for preview in the UI
+        file,
+        url,
         x: 100,
         y: 100,
       };
@@ -61,22 +61,20 @@ const PdfEditor = () => {
 
   // Update annotation position after dragging
   const updateAnnotationPosition = (id, x, y) => {
-    setAnnotations(annotations.map((ann) => {
-      if (ann.id === id) {
-        return { ...ann, x, y };
-      }
-      return ann;
-    }));
+    setAnnotations((prevAnnotations) =>
+      prevAnnotations.map((ann) =>
+        ann.id === id ? { ...ann, x, y } : ann
+      )
+    );
   };
 
   // Update text for text annotations
   const updateAnnotationText = (id, text) => {
-    setAnnotations(annotations.map((ann) => {
-      if (ann.id === id) {
-        return { ...ann, text };
-      }
-      return ann;
-    }));
+    setAnnotations((prevAnnotations) =>
+      prevAnnotations.map((ann) =>
+        ann.id === id ? { ...ann, text } : ann
+      )
+    );
   };
 
   // Generate the final PDF using pdf-lib
@@ -115,14 +113,16 @@ const PdfEditor = () => {
         let image;
         if (ann.file.type === 'image/png') {
           image = await pdfDoc.embedPng(imageBytes);
-        } else if (ann.file.type === 'image/jpeg' || ann.file.type === 'image/jpg') {
+        } else if (
+          ann.file.type === 'image/jpeg' ||
+          ann.file.type === 'image/jpg'
+        ) {
           image = await pdfDoc.embedJpg(imageBytes);
         } else {
           // Skip unsupported image types
           continue;
         }
-        // Scale the image (here, we scale to 50% of its original size)
-        const { width, height } = image.scale(0.5);
+        const { width, height } = image.scale(0.2);
         // Adjust y-coordinate for PDF (subtract image height)
         const pdfY = pageHeight - ann.y - height;
         page.drawImage(image, {
@@ -201,6 +201,7 @@ const PdfEditor = () => {
               height: '100%',
               pointerEvents: 'none',
             }}
+            
           />
         )}
 
@@ -218,9 +219,10 @@ const PdfEditor = () => {
                 position: 'absolute',
                 border: '1px dashed #000',
                 p: 1,
-                backgroundColor: ann.type === 'text'
-                  ? 'rgba(255,255,255,0.7)'
-                  : 'transparent',
+                backgroundColor:
+                  ann.type === 'text'
+                    ? 'rgba(255,255,255,0.7)'
+                    : 'transparent',
                 cursor: 'move',
               }}
             >
@@ -239,6 +241,9 @@ const PdfEditor = () => {
                   style={{ maxWidth: '100px', maxHeight: '100px' }}
                 />
               )}
+              <Typography variant="caption" color="red">
+                Position: ({ann.x}, {ann.y})
+              </Typography>
             </Box>
           </Draggable>
         ))}
