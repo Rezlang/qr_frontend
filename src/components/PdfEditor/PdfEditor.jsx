@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
-import { Button, Box, Typography, Slider, List, ListItem, ListItemButton, ListItemText, Divider } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import {
+  Button,
+  Box,
+  Typography,
+  Slider,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider,
+  Card,
+  Modal,
+  Paper,
+} from '@mui/material';
 import { PDFDocument } from 'pdf-lib';
-import Card from '@mui/material/Card';
 import PdfDocumentViewer from './PdfDocumentViewer';
 import AnnotationLayer from './AnnotationLayer';
 import { generatePdf } from './PdfGenerator';
 import DigitalSignature from './DigitalSignature/DigitalSignature';
+import TestComponent from './test';
 
 const PdfEditor = () => {
   // Global state for annotations, base PDF, dimensions, etc.
@@ -14,6 +27,10 @@ const PdfEditor = () => {
   const [basePdfUrl, setBasePdfUrl] = useState(null);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 600, height: 800 });
   const [activeAnnotationId, setActiveAnnotationId] = useState(null);
+  const [openSignatureModal, setOpenSignatureModal] = useState(false);
+
+  // Ref to access the DigitalSignature component’s methods
+  const digitalSignatureRef = useRef(null);
 
   // --- Annotation Section ---
   const handleAddTextBox = () => {
@@ -102,6 +119,48 @@ const PdfEditor = () => {
     await generatePdf({ basePdf, annotations, pdfDimensions });
   };
 
+  // --- New: Handle Digital Signature submission ---
+  // Utility to convert dataURL to a File object
+  const dataURLtoFile = (dataurl, filename) => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  const handleSubmitSignature = () => {
+    if (digitalSignatureRef.current) {
+      const signatureDataUrl = digitalSignatureRef.current.getSignatureData();
+      // Convert the data URL into a File object (if needed)
+      const signatureFile = dataURLtoFile(signatureDataUrl, 'signature.png');
+
+      // Create the new annotation as an image annotation.
+      // Note: The canvas used in DigitalSignature is 400 x 300,
+      // so we set naturalWidth and naturalHeight accordingly.
+      const newAnnotation = {
+        id: Date.now(),
+        type: 'image', // Use 'image' so AnnotationLayer renders it as an image.
+        file: signatureFile,
+        url: signatureDataUrl,
+        x: 50, // default position; adjust as needed
+        y: 50,
+        scale: 1,
+        naturalWidth: 400,  // match the canvas dimensions in DigitalSignature
+        naturalHeight: 300, // match the canvas dimensions in DigitalSignature
+      };
+
+      setAnnotations((prev) => [...prev, newAnnotation]);
+      setActiveAnnotationId(newAnnotation.id);
+      setOpenSignatureModal(false);
+    }
+  };
+
+
   const activeAnnotation = annotations.find(
     (ann) => ann.id === activeAnnotationId
   );
@@ -109,7 +168,7 @@ const PdfEditor = () => {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" gutterBottom>
-        PDF Editor with pdf-lib and react-pdf
+        PDF Editor
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'row' }}>
@@ -165,6 +224,11 @@ const PdfEditor = () => {
                 />
               </ListItemButton>
             </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => setOpenSignatureModal(true)}>
+                <ListItemText primary="Signature" />
+              </ListItemButton>
+            </ListItem>
             <Divider />
             <ListItem disablePadding>
               <ListItemButton onClick={handleGeneratePdf}>
@@ -191,9 +255,43 @@ const PdfEditor = () => {
           )}
         </Card>
       </Box>
-      <DigitalSignature/>
+
+      {/* Signature Modal */}
+      <Modal
+        open={openSignatureModal}
+        onClose={() => setOpenSignatureModal(false)}
+        aria-labelledby="signature-modal-title"
+        aria-describedby="signature-modal-description"
+      >
+        <Paper
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            outline: 'none',
+          }}
+        >
+          <Typography id="signature-modal-title" variant="h6" component="h2" sx={{ }}>
+            Create Signature
+          </Typography>
+          {/* The DigitalSignature component now accepts a forwarded ref */}
+          <DigitalSignature ref={digitalSignatureRef} />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button onClick={() => setOpenSignatureModal(false)} sx={{ mr: 1 }}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSubmitSignature}>
+              Submit Signature
+            </Button>
+          </Box>
+        </Paper>
+      </Modal>
+
     </Box>
-    
   );
 };
 

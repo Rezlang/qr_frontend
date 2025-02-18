@@ -1,7 +1,14 @@
-import React, { useRef, useState, useEffect } from 'react';
+// DigitalSignature.jsx
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { Box, Paper, Button, TextField, Typography } from '@mui/material';
 
-const DigitalSignature = () => {
+const DigitalSignature = forwardRef((props, ref) => {
   const [mode, setMode] = useState('draw'); // 'draw' or 'type'
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -26,7 +33,7 @@ const DigitalSignature = () => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     context.beginPath();
     context.moveTo(lastPos.x, lastPos.y);
     context.lineTo(x, y);
@@ -34,7 +41,7 @@ const DigitalSignature = () => {
     context.lineWidth = 2;
     context.stroke();
     context.closePath();
-    
+
     setLastPos({ x, y });
   };
 
@@ -47,19 +54,43 @@ const DigitalSignature = () => {
   useEffect(() => {
     if (mode === 'draw' && canvasRef.current) {
       const canvas = canvasRef.current;
-      // Set canvas size based on the element’s offset dimensions
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
       const context = canvas.getContext('2d');
-      // Fill with white background
-      context.fillStyle = '#fff';
+      context.fillStyle = 'rgba(255, 255, 255, 0)';
+      // context.fillStyle = '#fff';
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
   }, [mode]);
 
+  // Expose getSignatureData function to parent via ref
+  useImperativeHandle(ref, () => ({
+    getSignatureData: () => {
+      if (mode === 'draw') {
+        const canvas = canvasRef.current;
+        return canvas.toDataURL('image/png');
+      } else if (mode === 'type') {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 400;
+        tempCanvas.height = 300;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.fillStyle = 'rgba(255, 255, 255, 0)';
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        ctx.font = "48px 'Pacifico', cursive";
+        ctx.fillStyle = '#000';
+        const text = typedName || 'Your Signature';
+        const textMetrics = ctx.measureText(text);
+        const x = (tempCanvas.width - textMetrics.width) / 2;
+        const y = (tempCanvas.height + 48) / 2;
+        ctx.fillText(text, x, y);
+        return tempCanvas.toDataURL('image/png');
+      }
+    },
+  }));
+
   return (
     <Paper
-      elevation={3}
+      elevation={2}
       sx={{
         width: 400,
         height: 300,
@@ -69,7 +100,6 @@ const DigitalSignature = () => {
         justifyContent: 'space-between',
       }}
     >
-      {/* Signature Display Area */}
       <Box
         sx={{
           flex: 1,
@@ -87,7 +117,6 @@ const DigitalSignature = () => {
             onMouseDown={startDrawing}
             onMouseMove={draw}
             onMouseUp={endDrawing}
-            onMouseLeave={endDrawing}
           />
         ) : (
           <Box sx={{ width: '100%', height: '100%' }}>
@@ -113,8 +142,6 @@ const DigitalSignature = () => {
           </Box>
         )}
       </Box>
-
-      {/* Mode Selection Buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
         <Button
           variant={mode === 'draw' ? 'contained' : 'outlined'}
@@ -131,6 +158,6 @@ const DigitalSignature = () => {
       </Box>
     </Paper>
   );
-};
+});
 
 export default DigitalSignature;
