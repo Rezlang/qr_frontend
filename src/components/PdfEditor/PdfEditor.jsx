@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { PDFDocument, rgb } from 'pdf-lib';
-import { Button, Box, Typography, Paper, TextField } from '@mui/material';
+import { Button, Box, Typography, Paper, TextField, Slider } from '@mui/material';
 import Draggable from 'react-draggable';
+import { Document, Page, pdfjs } from 'react-pdf';
+
+// Set up the PDF.js worker from a CDN
+pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.mjs`;
 
 const PdfEditor = () => {
   // State for annotations (text and image objects)
   const [annotations, setAnnotations] = useState([]);
-  // Holds the URL for the generated PDF for download/display
-  const [pdfUrl, setPdfUrl] = useState(null);
-
-  // New state for base PDF file, its blob URL, and dimensions
+  // Holds the base PDF file, its blob URL, and dimensions
   const [basePdf, setBasePdf] = useState(null);
   const [basePdfUrl, setBasePdfUrl] = useState(null);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 600, height: 800 });
+  // State for the currently active annotation (not just images)
+  const [activeAnnotationId, setActiveAnnotationId] = useState(null);
 
-  // Add a text box annotation
+  // Add a text box annotation (now with a scale property)
   const handleAddTextBox = () => {
     const newAnnotation = {
       id: Date.now(),
@@ -22,24 +25,34 @@ const PdfEditor = () => {
       text: 'Edit me',
       x: 50,
       y: 50,
+      scale: 1, // default scale
     };
     setAnnotations([...annotations, newAnnotation]);
+    setActiveAnnotationId(newAnnotation.id);
   };
 
-  // Handle image upload for annotation
+  // Handle image upload for annotation (with scaling)
   const handleAddImage = (e) => {
     const file = e.target.files[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      const newAnnotation = {
-        id: Date.now(),
-        type: 'image',
-        file,
-        url,
-        x: 100,
-        y: 100,
+      const img = new Image();
+      img.onload = () => {
+        const newAnnotation = {
+          id: Date.now(),
+          type: 'image',
+          file,
+          url,
+          x: 100,
+          y: 100,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          scale: 1, // initial scale (100%)
+        };
+        setAnnotations((prevAnnotations) => [...prevAnnotations, newAnnotation]);
+        setActiveAnnotationId(newAnnotation.id);
       };
-      setAnnotations([...annotations, newAnnotation]);
+      img.src = url;
     }
   };
 
@@ -77,7 +90,33 @@ const PdfEditor = () => {
     );
   };
 
-  // Generate the final PDF using pdf-lib
+  // Update the scale for the active annotation (applies to both text and image)
+  const handleActiveAnnotationScaleChange = (e, newScale) => {
+    if (activeAnnotationId != null) {
+      setAnnotations((prevAnnotations) =>
+        prevAnnotations.map((ann) =>
+          ann.id === activeAnnotationId ? { ...ann, scale: newScale } : ann
+        )
+      );
+    }
+  };
+
+  // Delete an annotation by its id
+  const handleDeleteAnnotation = (id) => {
+    setAnnotations((prevAnnotations) =>
+      prevAnnotations.filter((ann) => ann.id !== id)
+    );
+    if (activeAnnotationId === id) {
+      setActiveAnnotationId(null);
+    }
+  };
+
+  // Find the active annotation (can be text or image)
+  const activeAnnotation = annotations.find(
+    (ann) => ann.id === activeAnnotationId
+  );
+
+  // Generate the final PDF using pdf-lib and open it in a new tab
   const handleGeneratePdf = async () => {
     let pdfDoc, page, pageWidth, pageHeight;
 
@@ -102,9 +141,9 @@ const PdfEditor = () => {
       if (ann.type === 'text') {
         // Convert UI y (top-left origin) to PDF y (bottom-left origin)
         page.drawText(ann.text, {
-          x: ann.x,
-          y: pageHeight - ann.y,
-          size: 12,
+          x: ann.x + 8,
+          y: pageHeight - ann.y - (16 * ann.scale),
+          size: 16 * ann.scale,
           color: rgb(0, 0, 0),
         });
       } else if (ann.type === 'image') {
@@ -122,29 +161,33 @@ const PdfEditor = () => {
           // Skip unsupported image types
           continue;
         }
-        const { width, height } = image.scale(0.2);
+        // Compute scaled dimensions using the slider's value
+        const scaledWidth = ann.naturalWidth * ann.scale;
+        const scaledHeight = ann.naturalHeight * ann.scale;
         // Adjust y-coordinate for PDF (subtract image height)
-        const pdfY = pageHeight - ann.y - height;
+        const pdfY = pageHeight - ann.y - scaledHeight;
         page.drawImage(image, {
-          x: ann.x,
-          y: pdfY,
-          width,
-          height,
+          x: ann.x + 9,
+          y: pdfY - 9,
+          width: scaledWidth,
+          height: scaledHeight,
         });
       }
     }
 
-    // Serialize the PDF document to bytes and create a blob URL for download
+    // Serialize the PDF document to bytes and create a blob URL
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
-    setPdfUrl(url);
+
+    // Open the generated PDF in a new browser tab
+    window.open(url, '_blank');
   };
 
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" gutterBottom>
-        PDF Editor with pdf-lib
+        PDF Editor with pdf-lib and react-pdf
       </Typography>
 
       {/* Controls */}
@@ -178,7 +221,25 @@ const PdfEditor = () => {
         </Button>
       </Paper>
 
-      {/* Editor area */}
+      {/* Global slider for the active annotation */}
+      {activeAnnotation && (
+        <Box sx={{ mb: 2, p: 1, border: '1px solid #ccc' }}>
+          <Typography variant="body1" gutterBottom>
+            Active Annotation Scale
+          </Typography>
+          <Slider
+            value={activeAnnotation.scale}
+            min={0.1}
+            max={1}
+            step={0.01}
+            onChange={handleActiveAnnotationScaleChange}
+            aria-labelledby="active-scale-slider"
+            sx={{ width: "50%" }}
+          />
+        </Box>
+      )}
+
+      {/* Editor area with bounding box - any overflow is clipped */}
       <Box
         sx={{
           position: 'relative',
@@ -186,14 +247,13 @@ const PdfEditor = () => {
           height: pdfDimensions.height,
           border: '1px solid #ccc',
           backgroundColor: 'white',
+          overflow: 'hidden', // This clips any content that overflows the PDF area.
         }}
       >
-        {/* Display the base PDF as a background if uploaded */}
+        {/* Display the base PDF using react-pdf */}
         {basePdfUrl && (
-          <embed
-            src={basePdfUrl}
-            type="application/pdf"
-            style={{
+          <Box
+            sx={{
               position: 'absolute',
               top: 0,
               left: 0,
@@ -201,63 +261,103 @@ const PdfEditor = () => {
               height: '100%',
               pointerEvents: 'none',
             }}
-            
-          />
+          >
+            <Document file={basePdfUrl}>
+              <Page
+                pageNumber={1}
+                width={pdfDimensions.width}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+              />
+            </Document>
+          </Box>
         )}
 
         {/* Render draggable annotations */}
         {annotations.map((ann) => (
           <Draggable
-            key={ann.id}
-            defaultPosition={{ x: ann.x, y: ann.y }}
-            onStop={(e, data) =>
-              updateAnnotationPosition(ann.id, data.x, data.y)
-            }
+          key={ann.id}
+          defaultPosition={{ x: ann.x, y: ann.y }}
+          onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
+        >
+          <Box
+            onClick={() => setActiveAnnotationId(ann.id)}
+            sx={{
+              position: 'absolute', // Ensure it doesn't stretch to full width
+              display: 'inline-block',
+              cursor: 'move',
+              zIndex: 5,
+            }}
           >
+            {/* Delete button pinned to the top-right of the annotation */}
             <Box
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteAnnotation(ann.id);
+              }}
               sx={{
                 position: 'absolute',
-                border: '1px dashed #000',
-                p: 1,
-                backgroundColor:
-                  ann.type === 'text'
-                    ? 'rgba(255,255,255,0.7)'
-                    : 'transparent',
-                cursor: 'move',
+                top: -10,
+                right: -10, // Ensures it's snug to the annotation
+                backgroundColor: 'red',
+                color: 'white',
+                borderRadius: '50%',
+                width: 20,
+                height: 20,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 10,
               }}
             >
-              {ann.type === 'text' ? (
-                <TextField
-                  variant="standard"
-                  value={ann.text}
-                  onChange={(e) =>
-                    updateAnnotationText(ann.id, e.target.value)
-                  }
-                />
-              ) : (
+              X
+            </Box>
+        
+            {/* Render the annotation content */}
+            {ann.type === 'text' ? (
+              <TextField
+                variant="standard"
+                value={ann.text}
+                onChange={(e) => updateAnnotationText(ann.id, e.target.value)}
+                InputProps={{
+                  style: { fontSize: 16 * ann.scale },
+                }}
+                sx={{
+                  padding: '2px',
+                  display: 'inline-block',
+                  border: '1px dashed #000',
+                  p: 1,
+                  borderRadius: '10px',
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  border: '1px dashed #000',
+                  display: 'inline-block',
+                  p: 1,
+                  borderRadius: '10px',
+                }}
+              >
                 <img
                   src={ann.url}
                   alt="annotation"
-                  style={{ maxWidth: '100px', maxHeight: '100px' }}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  style={{
+                    width: ann.naturalWidth * ann.scale,
+                    height: ann.naturalHeight * ann.scale,
+                    userSelect: 'none',
+                  }}
                 />
-              )}
-              <Typography variant="caption" color="red">
-                Position: ({ann.x}, {ann.y})
-              </Typography>
-            </Box>
-          </Draggable>
+              </Box>
+            )}
+          </Box>
+        </Draggable>
+        
         ))}
       </Box>
-
-      {/* Display download link for the generated PDF */}
-      {pdfUrl && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6">Generated PDF:</Typography>
-          <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
-            Download PDF
-          </a>
-        </Box>
-      )}
     </Box>
   );
 };
