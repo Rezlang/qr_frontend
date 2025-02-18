@@ -18,7 +18,6 @@ import PdfDocumentViewer from './PdfDocumentViewer';
 import AnnotationLayer from './AnnotationLayer';
 import { generatePdf } from './PdfGenerator';
 import DigitalSignature from './DigitalSignature/DigitalSignature';
-import TestComponent from './test';
 
 const PdfEditor = () => {
   // Global state for annotations, base PDF, dimensions, etc.

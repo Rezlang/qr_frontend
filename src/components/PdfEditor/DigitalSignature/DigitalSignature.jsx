@@ -58,7 +58,6 @@ const DigitalSignature = forwardRef((props, ref) => {
       canvas.height = canvas.offsetHeight;
       const context = canvas.getContext('2d');
       context.fillStyle = 'rgba(255, 255, 255, 0)';
-      // context.fillStyle = '#fff';
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
   }, [mode]);
@@ -68,22 +67,70 @@ const DigitalSignature = forwardRef((props, ref) => {
     getSignatureData: () => {
       if (mode === 'draw') {
         const canvas = canvasRef.current;
-        return canvas.toDataURL('image/png');
+        const context = canvas.getContext('2d');
+        const { width, height } = canvas;
+        const imageData = context.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        let minX = width, minY = height, maxX = 0, maxY = 0;
+        let found = false;
+        
+        // Loop through all pixels to find the bounding box
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const index = (y * width + x) * 4;
+            const alpha = data[index + 3];
+            if (alpha > 0) {
+              found = true;
+              if (x < minX) minX = x;
+              if (y < minY) minY = y;
+              if (x > maxX) maxX = x;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        
+        // If nothing was drawn, return the full canvas
+        if (!found) {
+          return canvas.toDataURL('image/png');
+        }
+        
+        const cropWidth = maxX - minX + 1;
+        const cropHeight = maxY - minY + 1;
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = cropWidth;
+        croppedCanvas.height = cropHeight;
+        const croppedContext = croppedCanvas.getContext('2d');
+        croppedContext.putImageData(
+          context.getImageData(minX, minY, cropWidth, cropHeight),
+          0,
+          0
+        );
+        return croppedCanvas.toDataURL('image/png');
       } else if (mode === 'type') {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = 400;
-        tempCanvas.height = 300;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.fillStyle = 'rgba(255, 255, 255, 0)';
-        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        ctx.font = "48px 'Pacifico', cursive";
-        ctx.fillStyle = '#000';
         const text = typedName || 'Your Signature';
-        const textMetrics = ctx.measureText(text);
-        const x = (tempCanvas.width - textMetrics.width) / 2;
-        const y = (tempCanvas.height + 48) / 2;
-        ctx.fillText(text, x, y);
-        return tempCanvas.toDataURL('image/png');
+        const fontSize = 48;
+        const margin = 10;
+        
+        // Create a temporary canvas to measure the text
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.font = `${fontSize}px 'Pacifico', cursive`;
+        const textMetrics = tempCtx.measureText(text);
+        const textWidth = Math.ceil(textMetrics.width);
+        const textHeight = fontSize; // Approximate text height
+        
+        // Create a canvas just large enough for the text with some margin
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = textWidth + margin * 2;
+        finalCanvas.height = textHeight + margin * 2;
+        const ctx = finalCanvas.getContext('2d');
+        ctx.fillStyle = 'rgba(255, 255, 255, 0)';
+        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+        ctx.font = `${fontSize}px 'Pacifico', cursive`;
+        ctx.fillStyle = '#000';
+        ctx.textBaseline = 'top';
+        ctx.fillText(text, margin, margin);
+        return finalCanvas.toDataURL('image/png');
       }
     },
   }));
