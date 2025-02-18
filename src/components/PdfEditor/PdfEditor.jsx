@@ -142,7 +142,7 @@ const PdfEditor = () => {
         // Convert UI y (top-left origin) to PDF y (bottom-left origin)
         page.drawText(ann.text, {
           x: ann.x + 8,
-          y: pageHeight - ann.y - (16 * ann.scale),
+          y: pageHeight - ann.y - 38,
           size: 16 * ann.scale,
           color: rgb(0, 0, 0),
         });
@@ -230,7 +230,7 @@ const PdfEditor = () => {
           <Slider
             value={activeAnnotation.scale}
             min={0.1}
-            max={1}
+            max={2}
             step={0.01}
             onChange={handleActiveAnnotationScaleChange}
             aria-labelledby="active-scale-slider"
