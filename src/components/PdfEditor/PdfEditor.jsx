@@ -5,6 +5,7 @@ import Card from '@mui/material/Card';
 import PdfDocumentViewer from './PdfDocumentViewer';
 import AnnotationLayer from './AnnotationLayer';
 import { generatePdf } from './PdfGenerator';
+import DigitalSignature from './DigitalSignature/DigitalSignature';
 
 const PdfEditor = () => {
   // Global state for annotations, base PDF, dimensions, etc.
@@ -190,7 +191,9 @@ const PdfEditor = () => {
           )}
         </Card>
       </Box>
+      <DigitalSignature/>
     </Box>
+    
   );
 };
 
