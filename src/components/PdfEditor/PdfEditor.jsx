@@ -18,6 +18,7 @@ import PdfDocumentViewer from './PdfDocumentViewer';
 import AnnotationLayer from './AnnotationLayer';
 import { generatePdf } from './PdfGenerator';
 import DigitalSignature from './DigitalSignature/DigitalSignature';
+import Toolbar from './Toolbar';
 
 const PdfEditor = () => {
   // Global state for annotations, base PDF, dimensions, etc.
@@ -138,12 +139,10 @@ const PdfEditor = () => {
     setCurrentTool('text');
   };
 
-  // For images, we set the tool to 'image'
   const handleAddImageTool = () => {
     setCurrentTool('image');
   };
 
-  // For signatures, we set the tool to 'signature'
   const handleAddSignatureTool = () => {
     setCurrentTool('signature');
   };
@@ -188,7 +187,6 @@ const PdfEditor = () => {
     );
   };
 
-
   const handleDeleteAnnotation = (id) => {
     setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
   };
@@ -212,7 +210,6 @@ const PdfEditor = () => {
   };
 
   // --- Digital Signature Section ---
-  // Utility to convert dataURL to a File object.
   const dataURLtoFile = (dataurl, filename) => {
     const arr = dataurl.split(',');
     const mime = arr[0].match(/:(.*?);/)[1];
@@ -225,8 +222,6 @@ const PdfEditor = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  // When the user submits their signature from the modal,
-  // update the pending signature annotation.
   const handleSubmitSignature = () => {
     if (digitalSignatureRef.current && pendingSignatureAnnotationId) {
       const signatureDataUrl = digitalSignatureRef.current.getSignatureData();
@@ -234,8 +229,6 @@ const PdfEditor = () => {
       setAnnotations((prev) =>
         prev.map((ann) => {
           if (ann.id === pendingSignatureAnnotationId) {
-            // Optionally, you can use the drawn area's width/height
-            // as the "natural" dimensions or use the canvas's fixed size.
             return {
               ...ann,
               file: signatureFile,
@@ -261,15 +254,6 @@ const PdfEditor = () => {
       <Box sx={{ display: 'flex', flexDirection: 'row' }}>
         {/* PDF Container */}
         <Box>
-          <Button variant="contained" component="label" sx={{ mb: 2 }}>
-            Upload Base PDF
-            <input
-              type="file"
-              accept="application/pdf"
-              hidden
-              onChange={handleUploadBasePdf}
-            />
-          </Button>
           <Box
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -318,35 +302,16 @@ const PdfEditor = () => {
           />
         </Box>
 
-        {/* Tools List */}
-        <Card sx={{ ml: 2, width: 200, marginTop: 6.5 }}>
-          <List component="nav">
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleAddTextBox}>
-                <ListItemText primary="Add Text Box" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleAddImageTool}>
-                <ListItemText primary="Add PNG/JPG Image" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleAddSignatureTool}>
-                <ListItemText primary="Signature" />
-              </ListItemButton>
-            </ListItem>
-            <Divider />
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleGeneratePdf}>
-                <ListItemText primary="Generate PDF" />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </Card>
+        {/* Toolbar Component */}
+        <Toolbar
+          onUploadBasePdf={handleUploadBasePdf}
+          onAddTextBox={handleAddTextBox}
+          onAddImageTool={handleAddImageTool}
+          onAddSignatureTool={handleAddSignatureTool}
+          onGeneratePdf={handleGeneratePdf}
+        />
       </Box>
 
-      {/* Signature Modal */}
       <Modal
         open={openSignatureModal}
         onClose={() => setOpenSignatureModal(false)}
