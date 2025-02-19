@@ -57,11 +57,23 @@ const PdfEditor = () => {
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
     const finalBox = { ...selectionBox, currentX: offsetX, currentY: offsetY, isDragging: false };
-    const x = Math.min(finalBox.startX, finalBox.currentX);
-    const y = Math.min(finalBox.startY, finalBox.currentY);
-    const width = Math.abs(finalBox.currentX - finalBox.startX);
-    const height = Math.abs(finalBox.currentY - finalBox.startY);
-
+  
+    let x, y, width, height;
+    if (currentTool === 'checkbox') {
+      const dx = finalBox.currentX - finalBox.startX;
+      const dy = finalBox.currentY - finalBox.startY;
+      const side = Math.min(Math.abs(dx), Math.abs(dy));
+      x = dx >= 0 ? finalBox.startX : finalBox.startX - side;
+      y = dy >= 0 ? finalBox.startY : finalBox.startY - side;
+      width = side;
+      height = side;
+    } else {
+      x = Math.min(finalBox.startX, finalBox.currentX);
+      y = Math.min(finalBox.startY, finalBox.currentY);
+      width = Math.abs(finalBox.currentX - finalBox.startX);
+      height = Math.abs(finalBox.currentY - finalBox.startY);
+    }
+  
     if (width > 5 && height > 5) {
       if (currentTool === 'text') {
         const newAnnotation = {
@@ -107,11 +119,24 @@ const PdfEditor = () => {
         setAnnotations((prev) => [...prev, newAnnotation]);
         setPendingSignatureAnnotationId(newAnnotation.id);
         setOpenSignatureModal(true);
+      } else if (currentTool === 'checkbox') {
+        const newAnnotation = {
+          id: Date.now(),
+          type: 'checkbox',
+          checked: false,
+          x,
+          y,
+          width,
+          height,
+          scale: 1,
+        };
+        setAnnotations((prev) => [...prev, newAnnotation]);
       }
     }
     setCurrentTool(null);
     setSelectionBox(null);
   };
+  
 
   const handleAddTextBox = () => {
     setCurrentTool('text');
@@ -123,6 +148,10 @@ const PdfEditor = () => {
 
   const handleAddSignatureTool = () => {
     setCurrentTool('signature');
+  };
+
+  const handleAddCheckboxTool = () => {
+    setCurrentTool('checkbox');
   };
 
   const handleImageFileChange = (e) => {
@@ -159,6 +188,16 @@ const PdfEditor = () => {
   const updateAnnotationText = (id, text) => {
     setAnnotations((prev) =>
       prev.map((ann) => (ann.id === id ? { ...ann, text } : ann))
+    );
+  };
+
+  const toggleCheckboxAnnotation = (id) => {
+    setAnnotations((prev) =>
+      prev.map((ann) =>
+        ann.id === id && ann.type === 'checkbox'
+          ? { ...ann, checked: !ann.checked }
+          : ann
+      )
     );
   };
 
@@ -251,9 +290,9 @@ const PdfEditor = () => {
     <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
       <Box sx={{ display: 'flex', justifyContent: 'center'}}>
         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
-        <Typography variant="h4" gutterBottom>
-          PDF Editor
-        </Typography>
+          <Typography variant="h4" gutterBottom>
+            PDF Editor
+          </Typography>
           <Box
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -273,6 +312,7 @@ const PdfEditor = () => {
               annotations={annotations}
               updateAnnotationPosition={updateAnnotationPosition}
               updateAnnotationText={updateAnnotationText}
+              toggleCheckboxAnnotation={toggleCheckboxAnnotation}
               handleDeleteAnnotation={handleDeleteAnnotation}
             />
 
@@ -329,9 +369,9 @@ const PdfEditor = () => {
           onAddTextBox={handleAddTextBox}
           onAddImageTool={handleAddImageTool}
           onAddSignatureTool={handleAddSignatureTool}
+          onAddCheckboxTool={handleAddCheckboxTool}
           onGeneratePdf={handleGeneratePdf}
         />
-        
       </Box>
 
       <Modal

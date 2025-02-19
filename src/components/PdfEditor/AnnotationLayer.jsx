@@ -6,6 +6,7 @@ const AnnotationLayer = ({
   annotations,
   updateAnnotationPosition,
   updateAnnotationText,
+  toggleCheckboxAnnotation,
   handleDeleteAnnotation,
 }) => {
   return (
@@ -64,7 +65,6 @@ const AnnotationLayer = ({
                 InputProps={{
                   disableUnderline: true,
                   style: {
-                    // You can adjust the font size as needed
                     fontSize: 16,
                     width: '100%',
                     height: '100%',
@@ -74,6 +74,49 @@ const AnnotationLayer = ({
                   padding: '4px',
                 }}
               />
+            ) : ann.type === 'checkbox' ? (
+              <Box
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleCheckboxAnnotation(ann.id);
+                }}
+              >
+                {ann.checked ? (
+                  <Box
+                    sx={{
+                      width: '80%',
+                      height: '80%',
+                      border: '2px solid black',
+                      borderRadius: 1,
+                      color: 'black',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5em',
+                    }}
+                  >
+                    ✓
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: '80%',
+                      height: '80%',
+                      border: '2px solid black',
+                      borderRadius: 1,
+                        }}  
+                      />
+                )}
+              </Box>
             ) : (
               <img
                 src={ann.url}

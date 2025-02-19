@@ -14,6 +14,7 @@ const Toolbar = ({
   onAddTextBox,
   onAddImageTool,
   onAddSignatureTool,
+  onAddCheckboxTool,
   onGeneratePdf,
 }) => {
   return (
@@ -39,7 +40,6 @@ const Toolbar = ({
           <ListItemButton onClick={onAddTextBox} sx={{ justifyContent: 'center' }}>
             <ListItemText
               primary="Add Text Box"
-              primaryTypographyProps={{ align: 'center' }}
             />
           </ListItemButton>
         </ListItem>
@@ -47,7 +47,6 @@ const Toolbar = ({
           <ListItemButton onClick={onAddImageTool} sx={{ justifyContent: 'center' }}>
             <ListItemText
               primary="Add PNG/JPG Image"
-              primaryTypographyProps={{ align: 'center' }}
             />
           </ListItemButton>
         </ListItem>
@@ -55,7 +54,13 @@ const Toolbar = ({
           <ListItemButton onClick={onAddSignatureTool} sx={{ justifyContent: 'center' }}>
             <ListItemText
               primary="Signature"
-              primaryTypographyProps={{ align: 'center' }}
+            />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={onAddCheckboxTool} sx={{ justifyContent: 'center' }}>
+            <ListItemText
+              primary="Check Box"
             />
           </ListItemButton>
         </ListItem>
@@ -65,7 +70,6 @@ const Toolbar = ({
             onClick={onGeneratePdf} sx={{ justifyContent: 'center', width: '100%'}}>
             <ListItemText
               primary="Generate PDF"
-              primaryTypographyProps={{ align: 'center' }}
             />
           </Button>
         </ListItem>
