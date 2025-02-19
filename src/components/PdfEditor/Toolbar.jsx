@@ -17,7 +17,7 @@ const Toolbar = ({
   onGeneratePdf,
 }) => {
   return (
-    <Card sx={{ ml: 2, width: 200, mt: 6.5 }}>
+    <Card sx={{ ml: 2, width: 200, mt: 6.5, mb: 6.5 }}>
       <List component="nav"
       sx={{pl: 2, pr: 2}}>
         <ListItem disablePadding>

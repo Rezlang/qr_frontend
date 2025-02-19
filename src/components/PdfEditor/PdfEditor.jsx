@@ -3,13 +3,6 @@ import {
   Button,
   Box,
   Typography,
-  Slider,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Divider,
-  Card,
   Modal,
   Paper,
 } from '@mui/material';
@@ -21,29 +14,21 @@ import DigitalSignature from './DigitalSignature/DigitalSignature';
 import Toolbar from './Toolbar';
 
 const PdfEditor = () => {
-  // Global state for annotations, base PDF, dimensions, etc.
   const [annotations, setAnnotations] = useState([]);
   const [basePdf, setBasePdf] = useState(null);
   const [basePdfUrl, setBasePdfUrl] = useState(null);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 600, height: 800 });
   const [openSignatureModal, setOpenSignatureModal] = useState(false);
-
-  // --- New State for Drag-to-Place Annotations ---
-  // currentTool can be 'text', 'image', or 'signature'
   const [currentTool, setCurrentTool] = useState(null);
-  // For image annotations we store the pending annotation id to update later.
   const [pendingImageAnnotationId, setPendingImageAnnotationId] = useState(null);
-  // Similarly, store pending signature annotation id.
   const [pendingSignatureAnnotationId, setPendingSignatureAnnotationId] = useState(null);
 
-  // Refs
   const imageInputRef = useRef(null);
+  const jsonInputRef = useRef(null); // For loading JSON annotation data
   const digitalSignatureRef = useRef(null);
 
-  // --- State for tracking the selection box during drag ---
   const [selectionBox, setSelectionBox] = useState(null);
 
-  // --- Mouse Handlers for Drag-to-Place ---
   const handleMouseDown = (e) => {
     if (!currentTool) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -71,14 +56,12 @@ const PdfEditor = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
-    // Finalize the selection
     const finalBox = { ...selectionBox, currentX: offsetX, currentY: offsetY, isDragging: false };
     const x = Math.min(finalBox.startX, finalBox.currentX);
     const y = Math.min(finalBox.startY, finalBox.currentY);
     const width = Math.abs(finalBox.currentX - finalBox.startX);
     const height = Math.abs(finalBox.currentY - finalBox.startY);
 
-    // Only create an annotation if the rectangle is large enough.
     if (width > 5 && height > 5) {
       if (currentTool === 'text') {
         const newAnnotation = {
@@ -93,7 +76,6 @@ const PdfEditor = () => {
         };
         setAnnotations((prev) => [...prev, newAnnotation]);
       } else if (currentTool === 'image') {
-        // Create a placeholder for the image annotation.
         const newAnnotation = {
           id: Date.now(),
           type: 'image',
@@ -107,15 +89,13 @@ const PdfEditor = () => {
         };
         setAnnotations((prev) => [...prev, newAnnotation]);
         setPendingImageAnnotationId(newAnnotation.id);
-        // Open file selector for image.
         if (imageInputRef.current) {
           imageInputRef.current.click();
         }
       } else if (currentTool === 'signature') {
-        // Create a placeholder for the signature annotation.
         const newAnnotation = {
           id: Date.now(),
-          type: 'signature', // We'll render this like an image.
+          type: 'signature',
           file: null,
           url: null,
           x,
@@ -126,7 +106,6 @@ const PdfEditor = () => {
         };
         setAnnotations((prev) => [...prev, newAnnotation]);
         setPendingSignatureAnnotationId(newAnnotation.id);
-        // Open the signature modal automatically.
         setOpenSignatureModal(true);
       }
     }
@@ -134,7 +113,6 @@ const PdfEditor = () => {
     setSelectionBox(null);
   };
 
-  // --- Annotation Tools Handlers ---
   const handleAddTextBox = () => {
     setCurrentTool('text');
   };
@@ -147,7 +125,6 @@ const PdfEditor = () => {
     setCurrentTool('signature');
   };
 
-  // Handler when an image file is selected.
   const handleImageFileChange = (e) => {
     const file = e.target.files[0];
     if (!file || !pendingImageAnnotationId) return;
@@ -173,14 +150,12 @@ const PdfEditor = () => {
     img.src = url;
   };
 
-  // Update annotation position after drag.
   const updateAnnotationPosition = (id, x, y) => {
     setAnnotations((prev) =>
       prev.map((ann) => (ann.id === id ? { ...ann, x, y } : ann))
     );
   };
 
-  // Update text content.
   const updateAnnotationText = (id, text) => {
     setAnnotations((prev) =>
       prev.map((ann) => (ann.id === id ? { ...ann, text } : ann))
@@ -191,7 +166,6 @@ const PdfEditor = () => {
     setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
   };
 
-  // --- PDF Base Upload & Final Document Rendering ---
   const handleUploadBasePdf = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -209,7 +183,6 @@ const PdfEditor = () => {
     await generatePdf({ basePdf, annotations, pdfDimensions });
   };
 
-  // --- Digital Signature Section ---
   const dataURLtoFile = (dataurl, filename) => {
     const arr = dataurl.split(',');
     const mime = arr[0].match(/:(.*?);/)[1];
@@ -245,15 +218,42 @@ const PdfEditor = () => {
     }
   };
 
-  return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        PDF Editor
-      </Typography>
+  const handleSaveAnnotations = () => {
+    const data = JSON.stringify(annotations, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'annotations.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
-      <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-        {/* PDF Container */}
-        <Box>
+  const handleLoadAnnotations = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const loadedAnnotations = JSON.parse(event.target.result);
+          setAnnotations(loadedAnnotations);
+        } catch (err) {
+          console.error('Error parsing JSON:', err);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  return (
+    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+      <Box sx={{ display: 'flex', justifyContent: 'center'}}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+        <Typography variant="h4" gutterBottom>
+          PDF Editor
+        </Typography>
           <Box
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -292,7 +292,21 @@ const PdfEditor = () => {
               />
             )}
           </Box>
-          {/* Hidden file input for image selection */}
+
+          <Box sx={{ ml: 2, display: 'flex', gap: 1, mt: 2}}>
+            <Button variant="contained" onClick={handleSaveAnnotations}>
+              Save Annotations
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (jsonInputRef.current) jsonInputRef.current.click();
+              }}
+            >
+              Load Annotations
+            </Button>
+          </Box>
+
           <input
             type="file"
             accept="image/png, image/jpeg"
@@ -300,9 +314,16 @@ const PdfEditor = () => {
             style={{ display: 'none' }}
             onChange={handleImageFileChange}
           />
+          {/* Hidden file input for loading annotations JSON */}
+          <input
+            type="file"
+            accept="application/json"
+            ref={jsonInputRef}
+            style={{ display: 'none' }}
+            onChange={handleLoadAnnotations}
+          />
         </Box>
 
-        {/* Toolbar Component */}
         <Toolbar
           onUploadBasePdf={handleUploadBasePdf}
           onAddTextBox={handleAddTextBox}
@@ -310,6 +331,7 @@ const PdfEditor = () => {
           onAddSignatureTool={handleAddSignatureTool}
           onGeneratePdf={handleGeneratePdf}
         />
+        
       </Box>
 
       <Modal
