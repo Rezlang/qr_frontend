@@ -25,88 +25,181 @@ const PdfEditor = () => {
   const [basePdf, setBasePdf] = useState(null);
   const [basePdfUrl, setBasePdfUrl] = useState(null);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 600, height: 800 });
-  const [activeAnnotationId, setActiveAnnotationId] = useState(null);
   const [openSignatureModal, setOpenSignatureModal] = useState(false);
 
-  // Ref to access the DigitalSignature component’s methods
+  // --- New State for Drag-to-Place Annotations ---
+  // currentTool can be 'text', 'image', or 'signature'
+  const [currentTool, setCurrentTool] = useState(null);
+  // For image annotations we store the pending annotation id to update later.
+  const [pendingImageAnnotationId, setPendingImageAnnotationId] = useState(null);
+  // Similarly, store pending signature annotation id.
+  const [pendingSignatureAnnotationId, setPendingSignatureAnnotationId] = useState(null);
+
+  // Refs
+  const imageInputRef = useRef(null);
   const digitalSignatureRef = useRef(null);
 
-  // --- Annotation Section ---
-  const handleAddTextBox = () => {
-    const newAnnotation = {
-      id: Date.now(),
-      type: 'text',
-      text: 'Edit me',
-      x: 50,
-      y: 50,
-      scale: 1,
-    };
-    setAnnotations([...annotations, newAnnotation]);
-    setActiveAnnotationId(newAnnotation.id);
+  // --- State for tracking the selection box during drag ---
+  const [selectionBox, setSelectionBox] = useState(null);
+
+  // --- Mouse Handlers for Drag-to-Place ---
+  const handleMouseDown = (e) => {
+    if (!currentTool) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    setSelectionBox({
+      startX: offsetX,
+      startY: offsetY,
+      currentX: offsetX,
+      currentY: offsetY,
+      isDragging: true,
+    });
   };
 
-  const handleAddImage = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
+  const handleMouseMove = (e) => {
+    if (!selectionBox || !selectionBox.isDragging) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    setSelectionBox((prev) => ({ ...prev, currentX: offsetX, currentY: offsetY }));
+  };
+
+  const handleMouseUp = (e) => {
+    if (!selectionBox || !selectionBox.isDragging) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    // Finalize the selection
+    const finalBox = { ...selectionBox, currentX: offsetX, currentY: offsetY, isDragging: false };
+    const x = Math.min(finalBox.startX, finalBox.currentX);
+    const y = Math.min(finalBox.startY, finalBox.currentY);
+    const width = Math.abs(finalBox.currentX - finalBox.startX);
+    const height = Math.abs(finalBox.currentY - finalBox.startY);
+
+    // Only create an annotation if the rectangle is large enough.
+    if (width > 5 && height > 5) {
+      if (currentTool === 'text') {
         const newAnnotation = {
           id: Date.now(),
-          type: 'image',
-          file,
-          url,
-          x: 100,
-          y: 100,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
+          type: 'text',
+          text: 'Edit me',
+          x,
+          y,
+          width,
+          height,
           scale: 1,
         };
         setAnnotations((prev) => [...prev, newAnnotation]);
-        setActiveAnnotationId(newAnnotation.id);
-      };
-      img.src = url;
+      } else if (currentTool === 'image') {
+        // Create a placeholder for the image annotation.
+        const newAnnotation = {
+          id: Date.now(),
+          type: 'image',
+          file: null,
+          url: null,
+          x,
+          y,
+          width,
+          height,
+          scale: 1,
+        };
+        setAnnotations((prev) => [...prev, newAnnotation]);
+        setPendingImageAnnotationId(newAnnotation.id);
+        // Open file selector for image.
+        if (imageInputRef.current) {
+          imageInputRef.current.click();
+        }
+      } else if (currentTool === 'signature') {
+        // Create a placeholder for the signature annotation.
+        const newAnnotation = {
+          id: Date.now(),
+          type: 'signature', // We'll render this like an image.
+          file: null,
+          url: null,
+          x,
+          y,
+          width,
+          height,
+          scale: 1,
+        };
+        setAnnotations((prev) => [...prev, newAnnotation]);
+        setPendingSignatureAnnotationId(newAnnotation.id);
+        // Open the signature modal automatically.
+        setOpenSignatureModal(true);
+      }
     }
+    setCurrentTool(null);
+    setSelectionBox(null);
   };
 
+  // --- Annotation Tools Handlers ---
+  const handleAddTextBox = () => {
+    setCurrentTool('text');
+  };
+
+  // For images, we set the tool to 'image'
+  const handleAddImageTool = () => {
+    setCurrentTool('image');
+  };
+
+  // For signatures, we set the tool to 'signature'
+  const handleAddSignatureTool = () => {
+    setCurrentTool('signature');
+  };
+
+  // Handler when an image file is selected.
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file || !pendingImageAnnotationId) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      setAnnotations((prev) =>
+        prev.map((ann) => {
+          if (ann.id === pendingImageAnnotationId) {
+            return {
+              ...ann,
+              file: file,
+              url: url,
+              naturalWidth: img.naturalWidth,
+              naturalHeight: img.naturalHeight,
+            };
+          }
+          return ann;
+        })
+      );
+      setPendingImageAnnotationId(null);
+    };
+    img.src = url;
+  };
+
+  // Update annotation position after drag.
   const updateAnnotationPosition = (id, x, y) => {
     setAnnotations((prev) =>
       prev.map((ann) => (ann.id === id ? { ...ann, x, y } : ann))
     );
   };
 
+  // Update text content.
   const updateAnnotationText = (id, text) => {
     setAnnotations((prev) =>
       prev.map((ann) => (ann.id === id ? { ...ann, text } : ann))
     );
   };
 
-  const handleActiveAnnotationScaleChange = (e, newScale) => {
-    if (activeAnnotationId != null) {
-      setAnnotations((prev) =>
-        prev.map((ann) =>
-          ann.id === activeAnnotationId ? { ...ann, scale: newScale } : ann
-        )
-      );
-    }
-  };
 
   const handleDeleteAnnotation = (id) => {
     setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
-    if (activeAnnotationId === id) {
-      setActiveAnnotationId(null);
-    }
   };
 
-  // --- PDF Base Upload & Final Document Rendering Section ---
+  // --- PDF Base Upload & Final Document Rendering ---
   const handleUploadBasePdf = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setBasePdf(file);
       const url = URL.createObjectURL(file);
       setBasePdfUrl(url);
-
-      // Use pdf-lib to load the file and extract the first page's dimensions
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const page = pdfDoc.getPages()[0];
@@ -118,8 +211,8 @@ const PdfEditor = () => {
     await generatePdf({ basePdf, annotations, pdfDimensions });
   };
 
-  // --- New: Handle Digital Signature submission ---
-  // Utility to convert dataURL to a File object
+  // --- Digital Signature Section ---
+  // Utility to convert dataURL to a File object.
   const dataURLtoFile = (dataurl, filename) => {
     const arr = dataurl.split(',');
     const mime = arr[0].match(/:(.*?);/)[1];
@@ -132,37 +225,32 @@ const PdfEditor = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
+  // When the user submits their signature from the modal,
+  // update the pending signature annotation.
   const handleSubmitSignature = () => {
-    if (digitalSignatureRef.current) {
+    if (digitalSignatureRef.current && pendingSignatureAnnotationId) {
       const signatureDataUrl = digitalSignatureRef.current.getSignatureData();
-      // Convert the data URL into a File object (if needed)
       const signatureFile = dataURLtoFile(signatureDataUrl, 'signature.png');
-
-      // Create the new annotation as an image annotation.
-      // Note: The canvas used in DigitalSignature is 400 x 300,
-      // so we set naturalWidth and naturalHeight accordingly.
-      const newAnnotation = {
-        id: Date.now(),
-        type: 'image', // Use 'image' so AnnotationLayer renders it as an image.
-        file: signatureFile,
-        url: signatureDataUrl,
-        x: 50, // default position; adjust as needed
-        y: 50,
-        scale: 1,
-        naturalWidth: 400,  // match the canvas dimensions in DigitalSignature
-        naturalHeight: 300, // match the canvas dimensions in DigitalSignature
-      };
-
-      setAnnotations((prev) => [...prev, newAnnotation]);
-      setActiveAnnotationId(newAnnotation.id);
+      setAnnotations((prev) =>
+        prev.map((ann) => {
+          if (ann.id === pendingSignatureAnnotationId) {
+            // Optionally, you can use the drawn area's width/height
+            // as the "natural" dimensions or use the canvas's fixed size.
+            return {
+              ...ann,
+              file: signatureFile,
+              url: signatureDataUrl,
+              naturalWidth: ann.width,
+              naturalHeight: ann.height,
+            };
+          }
+          return ann;
+        })
+      );
+      setPendingSignatureAnnotationId(null);
       setOpenSignatureModal(false);
     }
   };
-
-
-  const activeAnnotation = annotations.find(
-    (ann) => ann.id === activeAnnotationId
-  );
 
   return (
     <Box sx={{ p: 2 }}>
@@ -183,6 +271,9 @@ const PdfEditor = () => {
             />
           </Button>
           <Box
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
             sx={{
               position: 'relative',
               width: pdfDimensions.width,
@@ -199,9 +290,32 @@ const PdfEditor = () => {
               updateAnnotationPosition={updateAnnotationPosition}
               updateAnnotationText={updateAnnotationText}
               handleDeleteAnnotation={handleDeleteAnnotation}
-              setActiveAnnotationId={setActiveAnnotationId}
             />
+
+            {/* Render selection rectangle while dragging */}
+            {selectionBox && selectionBox.isDragging && (
+              <div
+                style={{
+                  position: 'absolute',
+                  border: '2px dashed #1976d2',
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                  left: Math.min(selectionBox.startX, selectionBox.currentX),
+                  top: Math.min(selectionBox.startY, selectionBox.currentY),
+                  width: Math.abs(selectionBox.currentX - selectionBox.startX),
+                  height: Math.abs(selectionBox.currentY - selectionBox.startY),
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
           </Box>
+          {/* Hidden file input for image selection */}
+          <input
+            type="file"
+            accept="image/png, image/jpeg"
+            ref={imageInputRef}
+            style={{ display: 'none' }}
+            onChange={handleImageFileChange}
+          />
         </Box>
 
         {/* Tools List */}
@@ -213,18 +327,12 @@ const PdfEditor = () => {
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component="label">
+              <ListItemButton onClick={handleAddImageTool}>
                 <ListItemText primary="Add PNG/JPG Image" />
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg"
-                  hidden
-                  onChange={handleAddImage}
-                />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => setOpenSignatureModal(true)}>
+              <ListItemButton onClick={handleAddSignatureTool}>
                 <ListItemText primary="Signature" />
               </ListItemButton>
             </ListItem>
@@ -235,23 +343,6 @@ const PdfEditor = () => {
               </ListItemButton>
             </ListItem>
           </List>
-
-          {/* Active Annotation Scale Slider */}
-          {activeAnnotation && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body1" gutterBottom>
-                Scale Text/Image
-              </Typography>
-              <Slider
-                value={activeAnnotation.scale}
-                min={0.1}
-                max={2}
-                step={0.01}
-                onChange={handleActiveAnnotationScaleChange}
-                aria-labelledby="active-scale-slider"
-              />
-            </Box>
-          )}
         </Card>
       </Box>
 
@@ -274,10 +365,9 @@ const PdfEditor = () => {
             outline: 'none',
           }}
         >
-          <Typography id="signature-modal-title" variant="h6" component="h2" sx={{ }}>
+          <Typography id="signature-modal-title" variant="h6" component="h2">
             Create Signature
           </Typography>
-          {/* The DigitalSignature component now accepts a forwarded ref */}
           <DigitalSignature ref={digitalSignatureRef} />
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button onClick={() => setOpenSignatureModal(false)} sx={{ mr: 1 }}>
@@ -289,7 +379,6 @@ const PdfEditor = () => {
           </Box>
         </Paper>
       </Modal>
-
     </Box>
   );
 };

@@ -7,7 +7,6 @@ const AnnotationLayer = ({
   updateAnnotationPosition,
   updateAnnotationText,
   handleDeleteAnnotation,
-  setActiveAnnotationId,
 }) => {
   return (
     <>
@@ -18,12 +17,16 @@ const AnnotationLayer = ({
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
         >
           <Box
-            onClick={() => setActiveAnnotationId(ann.id)}
             sx={{
               position: 'absolute',
-              display: 'inline-block',
+              width: ann.width,
+              height: ann.height,
               cursor: 'move',
               zIndex: 5,
+              border: '1px dashed #000',
+              boxSizing: 'border-box',
+              backgroundColor: 'rgba(255,255,255,0.5)',
+              borderRadius: 3,
             }}
           >
             {/* Delete button */}
@@ -56,38 +59,34 @@ const AnnotationLayer = ({
                 variant="standard"
                 value={ann.text}
                 onChange={(e) => updateAnnotationText(ann.id, e.target.value)}
+                multiline
+                fullWidth
                 InputProps={{
-                  style: { fontSize: 16 * ann.scale },
+                  disableUnderline: true,
+                  style: {
+                    // You can adjust the font size as needed
+                    fontSize: 16,
+                    width: '100%',
+                    height: '100%',
+                  },
                 }}
                 sx={{
-                  padding: '2px',
-                  display: 'inline-block',
-                  border: '1px dashed #000',
-                  p: 1,
-                  borderRadius: '10px',
+                  padding: '4px',
                 }}
               />
             ) : (
-              <Box
-                sx={{
-                  border: '1px dashed #000',
-                  display: 'inline-block',
-                  p: 1,
-                  borderRadius: '10px',
+              <img
+                src={ann.url}
+                alt="annotation"
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  userSelect: 'none',
                 }}
-              >
-                <img
-                  src={ann.url}
-                  alt="annotation"
-                  draggable={false}
-                  onDragStart={(e) => e.preventDefault()}
-                  style={{
-                    width: ann.naturalWidth * ann.scale,
-                    height: ann.naturalHeight * ann.scale,
-                    userSelect: 'none',
-                  }}
-                />
-              </Box>
+              />
             )}
           </Box>
         </Draggable>
