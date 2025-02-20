@@ -3,17 +3,16 @@ import {
   Button,
   Box,
   Typography,
-  Modal,
-  Paper,
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
 import { PDFDocument } from 'pdf-lib';
 import PdfDocumentViewer from './PdfDocumentViewer';
-import AnnotationLayer from './AnnotationLayer';
+import AnnotationLayer from './AnnotationLayer/AnnotationEditor';
 import { generatePdf } from './PdfGenerator';
-import DigitalSignature from './DigitalSignature/DigitalSignature';
 import Toolbar from './Toolbar';
+import SignatureModal from './SignatureModal/SignatureModal';
+import AnnotationSaver from './AnnotationSaver'; 
 
 const PdfEditor = () => {
   const [annotations, setAnnotations] = useState([]);
@@ -24,11 +23,9 @@ const PdfEditor = () => {
   const [currentTool, setCurrentTool] = useState(null);
   const [pendingImageAnnotationId, setPendingImageAnnotationId] = useState(null);
   const [pendingSignatureAnnotationId, setPendingSignatureAnnotationId] = useState(null);
-  const [mode, setMode] = useState('edit'); // new state for mode
+  const [mode, setMode] = useState('edit');
 
   const imageInputRef = useRef(null);
-  const jsonInputRef = useRef(null);
-  const digitalSignatureRef = useRef(null);
 
   const handleUploadBasePdf = async (e) => {
     const file = e.target.files[0];
@@ -79,7 +76,6 @@ const PdfEditor = () => {
     );
   };
 
-  // In sign mode, deletion is disabled
   const handleDeleteAnnotation = (id) => {
     if (mode === 'edit') {
       setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
@@ -137,56 +133,24 @@ const PdfEditor = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
-  const handleSubmitSignature = () => {
-    if (digitalSignatureRef.current && pendingSignatureAnnotationId) {
-      const signatureDataUrl = digitalSignatureRef.current.getSignatureData();
-      const signatureFile = dataURLtoFile(signatureDataUrl, 'signature.png');
-      setAnnotations((prev) =>
-        prev.map((ann) => {
-          if (ann.id === pendingSignatureAnnotationId) {
-            return {
-              ...ann,
-              file: signatureFile,
-              url: signatureDataUrl,
-              naturalWidth: ann.width,
-              naturalHeight: ann.height,
-            };
-          }
-          return ann;
-        })
-      );
-      setPendingSignatureAnnotationId(null);
-      setOpenSignatureModal(false);
-    }
-  };
-
-  const handleSaveAnnotations = () => {
-    const data = JSON.stringify(annotations, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'annotations.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleLoadAnnotations = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const loadedAnnotations = JSON.parse(event.target.result);
-          setAnnotations(loadedAnnotations);
-        } catch (err) {
-          console.error('Error parsing JSON:', err);
+  const handleSubmitSignature = (signatureDataUrl) => {
+    const signatureFile = dataURLtoFile(signatureDataUrl, 'signature.png');
+    setAnnotations((prev) =>
+      prev.map((ann) => {
+        if (ann.id === pendingSignatureAnnotationId) {
+          return {
+            ...ann,
+            file: signatureFile,
+            url: signatureDataUrl,
+            naturalWidth: ann.width,
+            naturalHeight: ann.height,
+          };
         }
-      };
-      reader.readAsText(file);
-    }
+        return ann;
+      })
+    );
+    setPendingSignatureAnnotationId(null);
+    setOpenSignatureModal(false);
   };
 
   return (
@@ -226,23 +190,12 @@ const PdfEditor = () => {
               onCreateAnnotation={handleAddAnnotation}
               onToolFinish={handleToolFinish}
               pdfDimensions={pdfDimensions}
-              mode={mode} // pass mode to AnnotationLayer
+              mode={mode}
             />
           </Box>
 
-          <Box sx={{ ml: 2, display: 'flex', gap: 1, mt: 2 }}>
-            <Button variant="contained" onClick={handleSaveAnnotations}>
-              Save Annotations
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                if (jsonInputRef.current) jsonInputRef.current.click();
-              }}
-            >
-              Load Annotations
-            </Button>
-          </Box>
+          {/* Moved save/load buttons to AnnotationSaver */}
+          <AnnotationSaver annotations={annotations} setAnnotations={setAnnotations} />
 
           <input
             type="file"
@@ -250,13 +203,6 @@ const PdfEditor = () => {
             ref={imageInputRef}
             style={{ display: 'none' }}
             onChange={handleImageFileChange}
-          />
-          <input
-            type="file"
-            accept="application/json"
-            ref={jsonInputRef}
-            style={{ display: 'none' }}
-            onChange={handleLoadAnnotations}
           />
         </Box>
         <Box sx={{ ml: 2 }}>
@@ -268,7 +214,6 @@ const PdfEditor = () => {
             onAddCheckboxTool={() => setCurrentTool('checkbox')}
             onGeneratePdf={handleGeneratePdf}
           />
-          {/* Edit/Sign mode toggle switch */}
           <ToggleButtonGroup
             value={mode}
             exclusive
@@ -284,39 +229,11 @@ const PdfEditor = () => {
           </ToggleButtonGroup>
         </Box>
       </Box>
-
-      <Modal
+      <SignatureModal
         open={openSignatureModal}
         onClose={() => setOpenSignatureModal(false)}
-        aria-labelledby="signature-modal-title"
-        aria-describedby="signature-modal-description"
-      >
-        <Paper
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            outline: 'none',
-          }}
-        >
-          <Typography id="signature-modal-title" variant="h6" component="h2">
-            Create Signature
-          </Typography>
-          <DigitalSignature ref={digitalSignatureRef} />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button onClick={() => setOpenSignatureModal(false)} sx={{ mr: 1 }}>
-              Cancel
-            </Button>
-            <Button variant="contained" onClick={handleSubmitSignature}>
-              Submit Signature
-            </Button>
-          </Box>
-        </Paper>
-      </Modal>
+        onSubmit={handleSubmitSignature}
+      />
     </Box>
   );
 };

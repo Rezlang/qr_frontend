@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { Box, TextField } from '@mui/material';
+import { Box } from '@mui/material';
 import Draggable from 'react-draggable';
+import TextAnnotation from './AnnotationTools/TextAnnotation.jsx';
+import CheckboxAnnotation from './AnnotationTools/CheckboxAnnotation';
+import SignatureAnnotation from './AnnotationTools/SignatureAnnotation';
+import ImageAnnotation from './AnnotationTools/ImageAnnotation';
 
 // Utility function to create an annotation based on the active tool and mouse positions.
 export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
@@ -44,7 +48,7 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   }
 };
 
-const AnnotationLayer = ({
+const AnnotationEditor = ({
   annotations,
   updateAnnotationPosition,
   updateAnnotationText,
@@ -56,11 +60,10 @@ const AnnotationLayer = ({
   onCreateAnnotation,
   onToolFinish,
   pdfDimensions,
-  mode, // new prop to control behavior based on mode
+  mode, // prop to control behavior (e.g., 'edit' or 'sign')
 }) => {
   const [selectionBox, setSelectionBox] = useState(null);
 
-  // Disable annotation creation when in sign mode
   const handleMouseDown = (e) => {
     if (!currentTool || mode === 'sign') return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -134,7 +137,7 @@ const AnnotationLayer = ({
           key={ann.id}
           defaultPosition={{ x: ann.x, y: ann.y }}
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
-          disabled={mode === 'sign'} // disable dragging in sign mode
+          disabled={mode === 'sign'}
         >
           <Box
             sx={{
@@ -174,128 +177,18 @@ const AnnotationLayer = ({
                 X
               </Box>
             )}
-            {ann.type === 'text' ? (
-              <TextField
-                variant="standard"
-                value={ann.text}
-                onChange={(e) => updateAnnotationText(ann.id, e.target.value)}
-                multiline
-                fullWidth
-                InputProps={{
-                  disableUnderline: true,
-                  style: { fontSize: 16, width: '100%', height: '100%' },
-                }}
-                sx={{ padding: '4px' }}
-              />
-            ) : ann.type === 'checkbox' ? (
-              <Box
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleCheckboxAnnotation(ann.id);
-                }}
-              >
-                {ann.checked ? (
-                  <Box
-                    sx={{
-                      width: '80%',
-                      height: '80%',
-                      border: '2px solid black',
-                      borderRadius: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.5em',
-                    }}
-                  >
-                    ✓
-                  </Box>
-                ) : (
-                  <Box
-                    sx={{
-                      width: '80%',
-                      height: '80%',
-                      border: '2px solid black',
-                      borderRadius: 1,
-                    }}
-                  />
-                )}
-              </Box>
-            ) : ann.type === 'signature' ? (
-              <Box
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onSignatureClick) onSignatureClick(ann);
-                }}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: 'rgba(220,220,220,0.5)',
-                }}
-              >
-                {ann.url ? (
-                  <img
-                    src={ann.url}
-                    alt="signature"
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      userSelect: 'none',
-                    }}
-                  />
-                ) : (
-                  <Box>Click to sign</Box>
-                )}
-              </Box>
-            ) : ann.type === 'image' ? (
-              <Box
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onImageClick) onImageClick(ann);
-                }}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: 'rgba(240,240,240,0.5)',
-                }}
-              >
-                {ann.url ? (
-                  <img
-                    src={ann.url}
-                    alt="image annotation"
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      userSelect: 'none',
-                    }}
-                  />
-                ) : (
-                  <Box>Click to add image</Box>
-                )}
-              </Box>
-            ) : null}
+            {ann.type === 'text' && (
+              <TextAnnotation ann={ann} updateAnnotationText={updateAnnotationText} />
+            )}
+            {ann.type === 'checkbox' && (
+              <CheckboxAnnotation ann={ann} toggleCheckboxAnnotation={toggleCheckboxAnnotation} />
+            )}
+            {ann.type === 'signature' && (
+              <SignatureAnnotation ann={ann} onSignatureClick={onSignatureClick} />
+            )}
+            {ann.type === 'image' && (
+              <ImageAnnotation ann={ann} onImageClick={onImageClick} />
+            )}
           </Box>
         </Draggable>
       ))}
@@ -317,4 +210,4 @@ const AnnotationLayer = ({
   );
 };
 
-export default AnnotationLayer;
+export default AnnotationEditor;
