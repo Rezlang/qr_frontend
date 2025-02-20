@@ -8,6 +8,8 @@ const AnnotationLayer = ({
   updateAnnotationText,
   toggleCheckboxAnnotation,
   handleDeleteAnnotation,
+  onSignatureClick, // Handler for signature annotations
+  onImageClick,     // Handler for image annotations
 }) => {
   return (
     <>
@@ -70,9 +72,7 @@ const AnnotationLayer = ({
                     height: '100%',
                   },
                 }}
-                sx={{
-                  padding: '4px',
-                }}
+                sx={{ padding: '4px' }}
               />
             ) : ann.type === 'checkbox' ? (
               <Box
@@ -113,24 +113,77 @@ const AnnotationLayer = ({
                       height: '80%',
                       border: '2px solid black',
                       borderRadius: 1,
-                        }}  
-                      />
+                    }}
+                  />
                 )}
               </Box>
-            ) : (
-              <img
-                src={ann.url}
-                alt="annotation"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-                style={{
+            ) : ann.type === 'signature' ? (
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSignatureClick) onSignatureClick(ann);
+                }}
+                sx={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain',
-                  userSelect: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'rgba(220,220,220,0.5)',
                 }}
-              />
-            )}
+              >
+                {ann.url ? (
+                  <img
+                    src={ann.url}
+                    alt="signature"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      userSelect: 'none',
+                    }}
+                  />
+                ) : (
+                  <Box>Click to sign</Box>
+                )}
+              </Box>
+            ) : ann.type === 'image' ? (
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onImageClick) onImageClick(ann);
+                }}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'rgba(240,240,240,0.5)',
+                }}
+              >
+                {ann.url ? (
+                  <img
+                    src={ann.url}
+                    alt="image annotation"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      userSelect: 'none',
+                    }}
+                  />
+                ) : (
+                  <Box>Click to add image</Box>
+                )}
+              </Box>
+            ) : null}
           </Box>
         </Draggable>
       ))}

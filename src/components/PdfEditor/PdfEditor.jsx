@@ -100,10 +100,6 @@ const PdfEditor = () => {
           scale: 1,
         };
         setAnnotations((prev) => [...prev, newAnnotation]);
-        setPendingImageAnnotationId(newAnnotation.id);
-        if (imageInputRef.current) {
-          imageInputRef.current.click();
-        }
       } else if (currentTool === 'signature') {
         const newAnnotation = {
           id: Date.now(),
@@ -116,9 +112,8 @@ const PdfEditor = () => {
           height,
           scale: 1,
         };
+        // Create the signature annotation without immediately opening the modal
         setAnnotations((prev) => [...prev, newAnnotation]);
-        setPendingSignatureAnnotationId(newAnnotation.id);
-        setOpenSignatureModal(true);
       } else if (currentTool === 'checkbox') {
         const newAnnotation = {
           id: Date.now(),
@@ -136,7 +131,6 @@ const PdfEditor = () => {
     setCurrentTool(null);
     setSelectionBox(null);
   };
-  
 
   const handleAddTextBox = () => {
     setCurrentTool('text');
@@ -234,6 +228,22 @@ const PdfEditor = () => {
     return new File([u8arr], filename, { type: mime });
   };
 
+  // New handler for clicking on a signature annotation
+  const handleSignatureClick = (annotation) => {
+    if (annotation.type === 'signature') {
+      setPendingSignatureAnnotationId(annotation.id);
+      setOpenSignatureModal(true);
+    }
+  };
+
+  const handleImageClick = (annotation) => {
+    setPendingImageAnnotationId(annotation.id);
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+  
+
   const handleSubmitSignature = () => {
     if (digitalSignatureRef.current && pendingSignatureAnnotationId) {
       const signatureDataUrl = digitalSignatureRef.current.getSignatureData();
@@ -314,6 +324,8 @@ const PdfEditor = () => {
               updateAnnotationText={updateAnnotationText}
               toggleCheckboxAnnotation={toggleCheckboxAnnotation}
               handleDeleteAnnotation={handleDeleteAnnotation}
+              onSignatureClick={handleSignatureClick}
+              onImageClick={handleImageClick}
             />
 
             {/* Render selection rectangle while dragging */}

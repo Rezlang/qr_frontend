@@ -3,7 +3,6 @@ import React from 'react';
 import SignIn from '../components/signin/signin';
 import UrlShortener from '../components/URLShortener/URLShortener';
 import QRGenerator from '../components/QRGenerator/QRGenerator';
-import PdfEditor from '../components/PdfEditor/PdfEditor';
 
 
 const Home = () => {
@@ -15,7 +14,6 @@ const Home = () => {
       <SignIn />
       <UrlShortener />
       <QRGenerator />
-      <PdfEditor />
     </div>
   );
 };
