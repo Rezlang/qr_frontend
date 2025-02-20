@@ -5,6 +5,8 @@ import {
   Typography,
   Modal,
   Paper,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { PDFDocument } from 'pdf-lib';
 import PdfDocumentViewer from './PdfDocumentViewer';
@@ -22,155 +24,37 @@ const PdfEditor = () => {
   const [currentTool, setCurrentTool] = useState(null);
   const [pendingImageAnnotationId, setPendingImageAnnotationId] = useState(null);
   const [pendingSignatureAnnotationId, setPendingSignatureAnnotationId] = useState(null);
+  const [mode, setMode] = useState('edit'); // new state for mode
 
   const imageInputRef = useRef(null);
-  const jsonInputRef = useRef(null); // For loading JSON annotation data
+  const jsonInputRef = useRef(null);
   const digitalSignatureRef = useRef(null);
 
-  const [selectionBox, setSelectionBox] = useState(null);
-
-  const handleMouseDown = (e) => {
-    if (!currentTool) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    setSelectionBox({
-      startX: offsetX,
-      startY: offsetY,
-      currentX: offsetX,
-      currentY: offsetY,
-      isDragging: true,
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!selectionBox || !selectionBox.isDragging) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    setSelectionBox((prev) => ({ ...prev, currentX: offsetX, currentY: offsetY }));
-  };
-
-  const handleMouseUp = (e) => {
-    if (!selectionBox || !selectionBox.isDragging) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-    const finalBox = { ...selectionBox, currentX: offsetX, currentY: offsetY, isDragging: false };
-  
-    let x, y, width, height;
-    if (currentTool === 'checkbox') {
-      const dx = finalBox.currentX - finalBox.startX;
-      const dy = finalBox.currentY - finalBox.startY;
-      const side = Math.min(Math.abs(dx), Math.abs(dy));
-      x = dx >= 0 ? finalBox.startX : finalBox.startX - side;
-      y = dy >= 0 ? finalBox.startY : finalBox.startY - side;
-      width = side;
-      height = side;
-    } else {
-      x = Math.min(finalBox.startX, finalBox.currentX);
-      y = Math.min(finalBox.startY, finalBox.currentY);
-      width = Math.abs(finalBox.currentX - finalBox.startX);
-      height = Math.abs(finalBox.currentY - finalBox.startY);
-    }
-  
-    if (width > 5 && height > 5) {
-      if (currentTool === 'text') {
-        const newAnnotation = {
-          id: Date.now(),
-          type: 'text',
-          text: 'Edit me',
-          x,
-          y,
-          width,
-          height,
-          scale: 1,
-        };
-        setAnnotations((prev) => [...prev, newAnnotation]);
-      } else if (currentTool === 'image') {
-        const newAnnotation = {
-          id: Date.now(),
-          type: 'image',
-          file: null,
-          url: null,
-          x,
-          y,
-          width,
-          height,
-          scale: 1,
-        };
-        setAnnotations((prev) => [...prev, newAnnotation]);
-      } else if (currentTool === 'signature') {
-        const newAnnotation = {
-          id: Date.now(),
-          type: 'signature',
-          file: null,
-          url: null,
-          x,
-          y,
-          width,
-          height,
-          scale: 1,
-        };
-        // Create the signature annotation without immediately opening the modal
-        setAnnotations((prev) => [...prev, newAnnotation]);
-      } else if (currentTool === 'checkbox') {
-        const newAnnotation = {
-          id: Date.now(),
-          type: 'checkbox',
-          checked: false,
-          x,
-          y,
-          width,
-          height,
-          scale: 1,
-        };
-        setAnnotations((prev) => [...prev, newAnnotation]);
-      }
-    }
-    setCurrentTool(null);
-    setSelectionBox(null);
-  };
-
-  const handleAddTextBox = () => {
-    setCurrentTool('text');
-  };
-
-  const handleAddImageTool = () => {
-    setCurrentTool('image');
-  };
-
-  const handleAddSignatureTool = () => {
-    setCurrentTool('signature');
-  };
-
-  const handleAddCheckboxTool = () => {
-    setCurrentTool('checkbox');
-  };
-
-  const handleImageFileChange = (e) => {
+  const handleUploadBasePdf = async (e) => {
     const file = e.target.files[0];
-    if (!file || !pendingImageAnnotationId) return;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      setAnnotations((prev) =>
-        prev.map((ann) => {
-          if (ann.id === pendingImageAnnotationId) {
-            return {
-              ...ann,
-              file: file,
-              url: url,
-              naturalWidth: img.naturalWidth,
-              naturalHeight: img.naturalHeight,
-            };
-          }
-          return ann;
-        })
-      );
-      setPendingImageAnnotationId(null);
-    };
-    img.src = url;
+    if (file) {
+      setBasePdf(file);
+      const url = URL.createObjectURL(file);
+      setBasePdfUrl(url);
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const page = pdfDoc.getPages()[0];
+      setPdfDimensions({ width: page.getWidth(), height: page.getHeight() });
+    }
+  };
+
+  const handleGeneratePdf = async () => {
+    await generatePdf({ basePdf, annotations, pdfDimensions });
+  };
+
+  // Callback when AnnotationLayer creates a new annotation
+  const handleAddAnnotation = (annotation) => {
+    setAnnotations((prev) => [...prev, annotation]);
+  };
+
+  // Called after an annotation is created to clear the current tool
+  const handleToolFinish = () => {
+    setCurrentTool(null);
   };
 
   const updateAnnotationPosition = (id, x, y) => {
@@ -195,40 +79,38 @@ const PdfEditor = () => {
     );
   };
 
+  // In sign mode, deletion is disabled
   const handleDeleteAnnotation = (id) => {
-    setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
+    if (mode === 'edit') {
+      setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
+    }
   };
 
-  const handleUploadBasePdf = async (e) => {
+  const handleImageFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setBasePdf(file);
-      const url = URL.createObjectURL(file);
-      setBasePdfUrl(url);
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const page = pdfDoc.getPages()[0];
-      setPdfDimensions({ width: page.getWidth(), height: page.getHeight() });
-    }
+    if (!file || !pendingImageAnnotationId) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      setAnnotations((prev) =>
+        prev.map((ann) => {
+          if (ann.id === pendingImageAnnotationId) {
+            return {
+              ...ann,
+              file,
+              url,
+              naturalWidth: img.naturalWidth,
+              naturalHeight: img.naturalHeight,
+            };
+          }
+          return ann;
+        })
+      );
+      setPendingImageAnnotationId(null);
+    };
+    img.src = url;
   };
 
-  const handleGeneratePdf = async () => {
-    await generatePdf({ basePdf, annotations, pdfDimensions });
-  };
-
-  const dataURLtoFile = (dataurl, filename) => {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
-  };
-
-  // New handler for clicking on a signature annotation
   const handleSignatureClick = (annotation) => {
     if (annotation.type === 'signature') {
       setPendingSignatureAnnotationId(annotation.id);
@@ -242,7 +124,18 @@ const PdfEditor = () => {
       imageInputRef.current.click();
     }
   };
-  
+
+  const dataURLtoFile = (dataurl, filename) => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
 
   const handleSubmitSignature = () => {
     if (digitalSignatureRef.current && pendingSignatureAnnotationId) {
@@ -297,16 +190,20 @@ const PdfEditor = () => {
   };
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-      <Box sx={{ display: 'flex', justifyContent: 'center'}}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            position: 'relative',
+            flexDirection: 'column',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
           <Typography variant="h4" gutterBottom>
             PDF Editor
           </Typography>
           <Box
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
             sx={{
               position: 'relative',
               width: pdfDimensions.width,
@@ -317,7 +214,6 @@ const PdfEditor = () => {
             }}
           >
             <PdfDocumentViewer basePdfUrl={basePdfUrl} pdfDimensions={pdfDimensions} />
-
             <AnnotationLayer
               annotations={annotations}
               updateAnnotationPosition={updateAnnotationPosition}
@@ -326,26 +222,15 @@ const PdfEditor = () => {
               handleDeleteAnnotation={handleDeleteAnnotation}
               onSignatureClick={handleSignatureClick}
               onImageClick={handleImageClick}
+              currentTool={currentTool}
+              onCreateAnnotation={handleAddAnnotation}
+              onToolFinish={handleToolFinish}
+              pdfDimensions={pdfDimensions}
+              mode={mode} // pass mode to AnnotationLayer
             />
-
-            {/* Render selection rectangle while dragging */}
-            {selectionBox && selectionBox.isDragging && (
-              <div
-                style={{
-                  position: 'absolute',
-                  border: '2px dashed #1976d2',
-                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                  left: Math.min(selectionBox.startX, selectionBox.currentX),
-                  top: Math.min(selectionBox.startY, selectionBox.currentY),
-                  width: Math.abs(selectionBox.currentX - selectionBox.startX),
-                  height: Math.abs(selectionBox.currentY - selectionBox.startY),
-                  pointerEvents: 'none',
-                }}
-              />
-            )}
           </Box>
 
-          <Box sx={{ ml: 2, display: 'flex', gap: 1, mt: 2}}>
+          <Box sx={{ ml: 2, display: 'flex', gap: 1, mt: 2 }}>
             <Button variant="contained" onClick={handleSaveAnnotations}>
               Save Annotations
             </Button>
@@ -366,7 +251,6 @@ const PdfEditor = () => {
             style={{ display: 'none' }}
             onChange={handleImageFileChange}
           />
-          {/* Hidden file input for loading annotations JSON */}
           <input
             type="file"
             accept="application/json"
@@ -375,15 +259,30 @@ const PdfEditor = () => {
             onChange={handleLoadAnnotations}
           />
         </Box>
-
-        <Toolbar
-          onUploadBasePdf={handleUploadBasePdf}
-          onAddTextBox={handleAddTextBox}
-          onAddImageTool={handleAddImageTool}
-          onAddSignatureTool={handleAddSignatureTool}
-          onAddCheckboxTool={handleAddCheckboxTool}
-          onGeneratePdf={handleGeneratePdf}
-        />
+        <Box sx={{ ml: 2 }}>
+          <Toolbar
+            onUploadBasePdf={handleUploadBasePdf}
+            onAddTextBox={() => setCurrentTool('text')}
+            onAddImageTool={() => setCurrentTool('image')}
+            onAddSignatureTool={() => setCurrentTool('signature')}
+            onAddCheckboxTool={() => setCurrentTool('checkbox')}
+            onGeneratePdf={handleGeneratePdf}
+          />
+          {/* Edit/Sign mode toggle switch */}
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            onChange={(e, newMode) => {
+              if (newMode !== null) {
+                setMode(newMode);
+              }
+            }}
+            sx={{ mt: 2 }}
+          >
+            <ToggleButton value="edit">Edit Mode</ToggleButton>
+            <ToggleButton value="sign">Sign Mode</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Box>
 
       <Modal
