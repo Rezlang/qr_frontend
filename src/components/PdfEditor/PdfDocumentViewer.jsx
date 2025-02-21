@@ -2,7 +2,6 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// Set up the PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.mjs`;
 
 const PdfDocumentViewer = ({ basePdfUrl, pdfDimensions }) => {

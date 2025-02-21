@@ -18,7 +18,6 @@ export const generatePdf = async ({ basePdf, annotations, pdfDimensions }) => {
 
   for (const ann of annotations) {
     if (ann.type === 'text') {
-      // Convert UI coordinates (top-left) to PDF coordinates (bottom-left)
       page.drawText(ann.text, {
         x: ann.x + 8,
         y: pageHeight - ann.y - 38,

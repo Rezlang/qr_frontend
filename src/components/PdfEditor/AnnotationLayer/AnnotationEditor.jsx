@@ -6,7 +6,6 @@ import CheckboxAnnotation from './AnnotationTools/CheckboxAnnotation';
 import SignatureAnnotation from './AnnotationTools/SignatureAnnotation';
 import ImageAnnotation from './AnnotationTools/ImageAnnotation';
 
-// Utility function to create an annotation based on the active tool and mouse positions.
 export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   let x, y, width, height;
   if (tool === 'checkbox') {
@@ -48,6 +47,32 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   }
 };
 
+// Wrapper component to detect a click versus a drag
+const ClickableAnnotationWrapper = ({ children, onClick }) => {
+  const [mouseDownPos, setMouseDownPos] = useState(null);
+
+  const handleMouseDown = (e) => {
+    setMouseDownPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = (e) => {
+    if (mouseDownPos) {
+      const dx = Math.abs(e.clientX - mouseDownPos.x);
+      const dy = Math.abs(e.clientY - mouseDownPos.y);
+      const threshold = 5; // threshold in pixels
+      if (dx < threshold && dy < threshold) {
+        onClick(e);
+      }
+    }
+  };
+
+  return (
+    <div onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
+      {children}
+    </div>
+  );
+};
+
 const AnnotationEditor = ({
   annotations,
   updateAnnotationPosition,
@@ -58,13 +83,14 @@ const AnnotationEditor = ({
   onImageClick,
   currentTool,
   onCreateAnnotation,
-  onToolFinish,
   pdfDimensions,
-  mode, // prop to control behavior (e.g., 'edit' or 'sign')
+  mode,
 }) => {
   const [selectionBox, setSelectionBox] = useState(null);
 
   const handleMouseDown = (e) => {
+    // Only start annotation creation if the click is directly on the container
+    if (e.target !== e.currentTarget) return;
     if (!currentTool || mode === 'sign') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
@@ -113,9 +139,6 @@ const AnnotationEditor = ({
       onCreateAnnotation(annotation);
     }
     setSelectionBox(null);
-    if (onToolFinish) {
-      onToolFinish();
-    }
   };
 
   return (
@@ -135,21 +158,22 @@ const AnnotationEditor = ({
       {annotations.map((ann) => (
         <Draggable
           key={ann.id}
-          defaultPosition={{ x: ann.x, y: ann.y }}
+          // Use controlled positioning to ensure exact coordinates are used
+          position={{ x: ann.x, y: ann.y }}
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
           disabled={mode === 'sign'}
         >
           <Box
             sx={{
               position: 'absolute',
-              width: ann.width,
-              height: ann.height,
+              width: ann.width + 4,
+              height: ann.height + 4,
               cursor: mode === 'edit' ? 'move' : 'default',
               zIndex: 5,
-              border: '1px dashed #000',
+              border: '2px dashed #1976d2',
               boxSizing: 'border-box',
-              backgroundColor: 'rgba(255,255,255,0.5)',
-              borderRadius: 3,
+              backgroundColor: 'rgba(25,118,210,0.1)',
+              borderRadius: 0,
             }}
           >
             {mode === 'edit' && (
@@ -184,10 +208,14 @@ const AnnotationEditor = ({
               <CheckboxAnnotation ann={ann} toggleCheckboxAnnotation={toggleCheckboxAnnotation} />
             )}
             {ann.type === 'signature' && (
-              <SignatureAnnotation ann={ann} onSignatureClick={onSignatureClick} />
+              <ClickableAnnotationWrapper onClick={() => onSignatureClick(ann.id)}>
+                <SignatureAnnotation ann={ann} />
+              </ClickableAnnotationWrapper>
             )}
             {ann.type === 'image' && (
-              <ImageAnnotation ann={ann} onImageClick={onImageClick} />
+              <ClickableAnnotationWrapper onClick={() => onImageClick(ann.id)}>
+                <ImageAnnotation ann={ann} />
+              </ClickableAnnotationWrapper>
             )}
           </Box>
         </Draggable>

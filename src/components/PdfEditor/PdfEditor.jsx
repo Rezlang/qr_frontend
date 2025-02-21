@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  Button,
   Box,
   Typography,
   ToggleButton,
@@ -12,7 +11,7 @@ import AnnotationLayer from './AnnotationLayer/AnnotationEditor';
 import { generatePdf } from './PdfGenerator';
 import Toolbar from './Toolbar';
 import SignatureModal from './SignatureModal/SignatureModal';
-import AnnotationSaver from './AnnotationSaver'; 
+import AnnotationSaver from './AnnotationLayer/AnnotationSaver'; 
 
 const PdfEditor = () => {
   const [annotations, setAnnotations] = useState([]);
@@ -47,11 +46,6 @@ const PdfEditor = () => {
   // Callback when AnnotationLayer creates a new annotation
   const handleAddAnnotation = (annotation) => {
     setAnnotations((prev) => [...prev, annotation]);
-  };
-
-  // Called after an annotation is created to clear the current tool
-  const handleToolFinish = () => {
-    setCurrentTool(null);
   };
 
   const updateAnnotationPosition = (id, x, y) => {
@@ -178,6 +172,7 @@ const PdfEditor = () => {
             }}
           >
             <PdfDocumentViewer basePdfUrl={basePdfUrl} pdfDimensions={pdfDimensions} />
+
             <AnnotationLayer
               annotations={annotations}
               updateAnnotationPosition={updateAnnotationPosition}
@@ -188,13 +183,11 @@ const PdfEditor = () => {
               onImageClick={handleImageClick}
               currentTool={currentTool}
               onCreateAnnotation={handleAddAnnotation}
-              onToolFinish={handleToolFinish}
               pdfDimensions={pdfDimensions}
               mode={mode}
             />
           </Box>
 
-          {/* Moved save/load buttons to AnnotationSaver */}
           <AnnotationSaver annotations={annotations} setAnnotations={setAnnotations} />
 
           <input
