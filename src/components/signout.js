@@ -34,9 +34,6 @@ const SignOutButton = styled(Button)(({ theme }) => ({
       },
     }),
   }));
-  
-
-
 
 export default function SignOut() {
     const navigate = useNavigate();
@@ -55,8 +52,7 @@ export default function SignOut() {
         <RightAlignedBox>
             <SignOutButton>
                 <Button variant="outlined"
-                    onClick={handleSignOut}
-                >
+                    onClick={handleSignOut}>
                     Sign out
                 </Button>
             </SignOutButton>
