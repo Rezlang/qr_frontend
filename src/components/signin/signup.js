@@ -21,7 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../App';
 import { doc, setDoc } from 'firebase/firestore';
-
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -81,6 +81,15 @@ export default function Signup(props) {
   const handleClose = () => {
     setOpen(false);
   };
+
+  const googleSignIn = async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.error("Google Sign-In Error:", e);
+      }
+    };
 
   React.useEffect(() => {
     // Subscribe to auth state changes
@@ -269,7 +278,7 @@ export default function Signup(props) {
             <Button
               fullWidth
               variant="outlined"
-              onClick={() => alert('Sign in with Google')}
+              onClick={googleSignIn}
               startIcon={<GoogleIcon />}
             >
               Sign up with Google

@@ -18,9 +18,10 @@ import AppTheme from './theme/AppTheme';
 import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 import { auth, db } from '../../App';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { GoogleAuthProvider } from 'firebase/auth/web-extension';
 
 
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -146,6 +147,15 @@ export default function Signin(props) {
     }
   };
 
+  const googleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      console.error("Google Sign-In Error:", e);
+    }
+  };
+
   const validateInputs = () => {
     const email = document.getElementById('email');
     const password = document.getElementById('password');
@@ -262,7 +272,7 @@ export default function Signin(props) {
             <Button
               fullWidth
               variant="outlined"
-              onClick={() => alert('Sign in with Google')}
+              onClick={googleSignIn}
               startIcon={<GoogleIcon />}
             >
               Sign in with Google
