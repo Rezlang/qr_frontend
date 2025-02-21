@@ -60,7 +60,7 @@ const UrlShortener = () => {
         </Button>
       </div>
       <DefaultCopyField
-        Readonly
+        readOnly
         id="url-response"
         label="Copy Short URL"
         value={shortenedUrl}

@@ -19,7 +19,9 @@ import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../App';
+import { auth, db } from '../../App';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -80,11 +82,37 @@ export default function Signin(props) {
     setOpen(false);
   };
 
+  async function checkIfDocExists(collection, docId) {
+    
+    const docRef = doc(db, collection, docId);
+    const docSnapshot = await getDoc(docRef);
+
+    if (docSnapshot.exists()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   React.useEffect(() => {
     // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (userCredential) => {
+    const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
       if (userCredential) {
         // User is signed in
+        // Make sure they have a document in the firebase
+        const exists = await checkIfDocExists('users', userCredential.uid);
+        if (!exists) {
+          const userRef = doc(db, "users", userCredential.uid);
+          try {
+            await setDoc(userRef, {
+              premium:false,
+              uid:userCredential.uid
+            });
+          } catch (e) {
+            console.error("Failed to store user information:", e.message);
+          }
+        }
+
         navigate("/home", {replace : true});
 
       }

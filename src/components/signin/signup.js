@@ -19,7 +19,8 @@ import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../App';
+import { auth, db } from '../../App';
+import { doc, setDoc } from 'firebase/firestore';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -83,9 +84,19 @@ export default function Signup(props) {
 
   React.useEffect(() => {
     // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (userCredential) => {
-      if (userCredential) {
+    const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
+    if (userCredential) {
         // User is signed in
+        // Put them into firebase
+        const userRef = doc(db, "users", userCredential.uid);
+        try {
+          await setDoc(userRef, {
+            premium:false,
+            uid:userCredential.uid
+          });
+        } catch (e) {
+          console.error("Failed to store user information:", e.message);
+        }
         navigate("/home", {replace : true});
       }
     });
@@ -241,7 +252,7 @@ export default function Signup(props) {
               variant="contained"
               onClick={validateInputs}
             >
-              Sign in
+              Sign Up
             </Button>
             <Link
               component="button"
