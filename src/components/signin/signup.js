@@ -20,7 +20,7 @@ import { GoogleIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../App';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -82,6 +82,18 @@ export default function Signup(props) {
     setOpen(false);
   };
 
+  async function checkIfDocExists(collection, docId) {
+    
+    const docRef = doc(db, collection, docId);
+    const docSnapshot = await getDoc(docRef);
+
+    if (docSnapshot.exists()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   const googleSignIn = async () => {
       const provider = new GoogleAuthProvider();
       try {
@@ -97,14 +109,19 @@ export default function Signup(props) {
     if (userCredential) {
         // User is signed in
         // Put them into firebase
-        const userRef = doc(db, "users", userCredential.uid);
-        try {
-          await setDoc(userRef, {
-            premium:false,
-            uid:userCredential.uid
-          });
-        } catch (e) {
-          console.error("Failed to store user information:", e.message);
+        const exists = await checkIfDocExists('users', userCredential.uid);
+        if (!exists) {
+
+          const userRef = doc(db, "users", userCredential.uid);
+          
+          try {
+            await setDoc(userRef, {
+              premium:false,
+              uid:userCredential.uid
+            });
+          } catch (e) {
+            console.error("Failed to store user information:", e.message);
+          }
         }
         navigate("/home", {replace : true});
       }

@@ -248,7 +248,6 @@ export default function Signin(props) {
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
-            <ForgotPassword open={open} handleClose={handleClose} />
             <Button
               type="submit"
               fullWidth
@@ -257,6 +256,7 @@ export default function Signin(props) {
             >
               Sign in
             </Button>
+            <ForgotPassword open={open} handleClose={handleClose} />
             <Link
               component="button"
               type="button"
