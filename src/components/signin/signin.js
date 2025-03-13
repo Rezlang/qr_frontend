@@ -18,10 +18,9 @@ import AppTheme from './theme/AppTheme';
 import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, onAuthStateChanged, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth, db } from '../../App';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { GoogleAuthProvider } from 'firebase/auth/web-extension';
 
 
 const Card = styled(MuiCard)(({ theme }) => ({
