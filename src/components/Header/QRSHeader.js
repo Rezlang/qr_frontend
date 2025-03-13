@@ -9,12 +9,12 @@ export default function QRSHeader() {
 
     const pages = [
         { label: "URL Shortener", path: "/shorten" },
-        { label: "Analytics", path: "/about" },
-        { label: "Document Signer", path: "/contact" },
+        { label: "Analytics", path: "/analytics" },
+        { label: "Document Signer", path: "/docsigner" },
     ];
     return (
-    <AppBar position="static" sx={{ backgroundColor: "#1976d2", paddingX: 2 }}>
-        <Toolbar sx={{ display: "flex",   padding:0 }}>
+    <AppBar position="static" sx={{ backgroundColor: "#1976d2" }}>
+        <Toolbar sx={{ display: "flex"}}>
             {/* Maybe insert a logo here :) */}
             <Box sx={{ display: "flex"}}>
                 {pages.map((page) => (

@@ -11,6 +11,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
 import URLShort from './pages/URLShortener';
+import Analytics from './pages/Analytics';
+import DocSigner from './pages/DocSigner';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         <Route path="/" element={<SignUp />} />
         <Route path='/signin' element={<SignIn />} />
         <Route path="/shorten" element={<URLShort />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/docsigner" element={<DocSigner />} />
       </Routes>
     </BrowserRouter>
   );

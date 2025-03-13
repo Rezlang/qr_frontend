@@ -1,19 +1,18 @@
-// src/pages/URLShortener.js
+// src/pages/Analytics.js
 import React from 'react';
-import UrlShortener from '../components/URLShortener/URLShortener';
-import QRSHeader
- from '../components/Header/QRSHeader';
- 
-const URLShort = () => {
+import QRSHeader from '../components/Header/QRSHeader';
+
+const Analytics = () => {
+  
   return (
     <div className="App">
       <header className="App-header">
         {/* You can include your logo or other header content here */}
         <QRSHeader />
       </header>
-      <UrlShortener />
+      <h2>Analytics placeholder</h2>   
     </div>
   );
 };
 
-export default URLShort;
+export default Analytics;
