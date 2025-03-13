@@ -10,6 +10,7 @@ import { initializeAnalytics } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
+import URLShort from './pages/URLShortener';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/go/:shortenedUrl" element={<RedirectPage />} />
         <Route path="/" element={<SignUp />} />
         <Route path='/signin' element={<SignIn />} />
+        <Route path="/shorten" element={<URLShort />} />
       </Routes>
     </BrowserRouter>
   );
