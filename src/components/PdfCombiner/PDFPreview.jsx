@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import * as pdfjsLib from "pdfjs-dist";
+import {pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.mjs`;
+
 
 const PDFPreview = ({ src }) => {
     
@@ -7,17 +10,21 @@ const PDFPreview = ({ src }) => {
 
   useEffect(() => {
     let isMounted = true;
-    pdfjsLib.getDocument(src).promise.then(pdf => {
+    console.log("Attempting to load PDF:", src);
+    pdfjs.getDocument(src).promise.then(pdf => {
+      console.log("PDF loaded", pdf);
       pdf.getPage(1).then(page => {
-        const scale = 1.5; // adjust scale as needed
+        console.log("Page 1 loaded", page);
+        const scale = 1.5;
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-
+  
         const renderContext = { canvasContext: context, viewport };
         page.render(renderContext).promise.then(() => {
+          console.log("Page rendered");
           if (isMounted) {
             const dataUrl = canvas.toDataURL("image/png");
             setPreview(dataUrl);
@@ -27,9 +34,10 @@ const PDFPreview = ({ src }) => {
     }).catch(err => {
       console.error("Error loading PDF:", err);
     });
-
+  
     return () => { isMounted = false; };
   }, [src]);
+  
 
   return preview ? (
     <img
