@@ -232,7 +232,7 @@ const PDFCombiner = () => {
             position={{ x: item.x, y: 0 }}
             onDrag={(e, data) => handleDrag(e, data, item.id)}
             onStop={(e, data) => handleStop(e, data, item.id)}
-            cancel="" // Allow dragging from any element inside the card
+            cancel=""
           >
             <Box
               sx={{
