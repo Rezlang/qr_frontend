@@ -1,4 +1,4 @@
-import PdfCombiner from "../components/PdfCombiner";
+import PdfCombiner from "../components/PdfCombiner/PdfCombiner";
 import React from 'react';
 
 const PdfCombinerPage = () => {
