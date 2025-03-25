@@ -1,5 +1,5 @@
 import { Button } from "@mui/material";
-import { auth } from "../App";
+import { auth } from "../../App";
 import { styled } from "@mui/material";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
