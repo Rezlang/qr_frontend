@@ -11,6 +11,7 @@ export default function QRSHeader() {
         { label: "URL Shortener", path: "/shorten" },
         { label: "Analytics", path: "/analytics" },
         { label: "Document Signer", path: "/docsigner" },
+        { label: "File Converter", path: "/fileconv" },
     ];
     return (
     <AppBar position="static" sx={{ backgroundColor: "#1976d2" }}>

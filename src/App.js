@@ -13,6 +13,7 @@ import { firebaseConfig } from './firebaseConfig';
 import URLShort from './pages/URLShortener';
 import Analytics from './pages/Analytics';
 import DocSigner from './pages/DocSigner';
+import ConverterPage from './pages/ConverterPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/shorten" element={<URLShort />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/docsigner" element={<DocSigner />} />
+        <Route path="/fileconv" element={<ConverterPage />} />
       </Routes>
     </BrowserRouter>
   );
