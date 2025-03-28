@@ -11,10 +11,11 @@ export const usePDFProcessor = () => {
   const itemHeight = advancedMode ? 160 : 120;
   const gap = 16;
 
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files).slice(0, 5 - pdfFiles.length);
+  const handleFileUpload = async (files) => {
+    // Limit files to the maximum allowed (e.g., 5)
+    const acceptedFiles = files.slice(0, 5 - pdfFiles.length);
     const loadedFiles = await Promise.all(
-      files.map(async (file) => {
+      acceptedFiles.map(async (file) => {
         const filePreviewUrl = URL.createObjectURL(file);
         const arrayBuffer = await file.arrayBuffer();
         const pdfDoc = await PDFDocument.load(arrayBuffer);
@@ -37,10 +38,10 @@ export const usePDFProcessor = () => {
         return { file, previewUrl: filePreviewUrl, pages };
       })
     );
-
+  
     setPdfFiles((prev) => [...prev, ...loadedFiles]);
     setPdfPages((prev) => [...prev, ...loadedFiles]);
-  };
+  };  
 
   const removeFile = (index) => {
     const fileToRemove = pdfFiles[index]?.file;

@@ -17,8 +17,9 @@ const Slider = ({
       position: "relative",
       width: containerWidth,
       height: itemHeight,
-      border: "1px solid #ccc",
-      borderRadius: 2,
+      border: "1px solid",
+      borderColor: "divider",
+      borderRadius: 1,
       overflowX: "auto",
       mb: 3,
     }}
@@ -30,15 +31,16 @@ const Slider = ({
         position={{ x: item.x, y: 0 }}
         onDrag={(e, data) => onDrag(e, data, item.id)}
         onStop={(e, data) => onStop(e, data, item.id)}
-        cancel=""
       >
         <Box
           sx={{
             width: itemWidth,
             height: itemHeight,
-            border: "1px solid #999",
-            borderRadius: 2,
-            backgroundColor: item.type === "file" ? "#eaeaea" : "#f5f5f5",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            backgroundColor:
+              item.type === "file" ? "background.paper" : "grey.100",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -46,6 +48,7 @@ const Slider = ({
             position: "absolute",
             cursor: "move",
             userSelect: "none",
+            p: 1,
           }}
         >
           <Box sx={{ width: "100%", height: "80%" }}>

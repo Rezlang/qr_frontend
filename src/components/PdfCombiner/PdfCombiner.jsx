@@ -1,7 +1,9 @@
+import React from "react";
 import { Box, Button, Switch, Typography } from "@mui/material";
 import FileList from "./FileList";
 import Slider from "./Slider";
 import { usePDFProcessor } from "./usePDFProcessor";
+import FileDropZone from "../FileDropZone/FileDropZone";
 
 const PDFCombiner = () => {
   const {
@@ -22,16 +24,14 @@ const PDFCombiner = () => {
   const containerWidth = orderedItems.length * (itemWidth + gap);
 
   return (
-    <Box sx={{ padding: 4, fontFamily: "sans-serif" }}>
-      <Typography variant="h4" gutterBottom>PDF Combiner</Typography>
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        PDF Combiner
+      </Typography>
 
-      <input
-        type="file"
-        accept="application/pdf"
-        multiple
-        onChange={handleFileUpload}
+      <FileDropZone
+        onFilesAdded={handleFileUpload}
         disabled={pdfFiles.length >= 5}
-        style={{ marginBottom: 16 }}
       />
 
       <FileList files={pdfFiles} onRemove={removeFile} />
