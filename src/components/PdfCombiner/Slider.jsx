@@ -7,7 +7,6 @@ const Slider = ({
   items,
   itemWidth,
   itemHeight,
-  gap,
   containerWidth,
   advancedMode,
   onDrag,

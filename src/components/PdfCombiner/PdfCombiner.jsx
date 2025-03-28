@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
 import { Box, Button, Switch, Typography } from "@mui/material";
 import FileList from "./FileList";
-import PDFPreview from "./PDFPreview";
 import Slider from "./Slider";
 import { usePDFProcessor } from "./usePDFProcessor";
 
 const PDFCombiner = () => {
   const {
     pdfFiles,
-    pdfPages,
     orderedItems,
     advancedMode,
     itemHeight,

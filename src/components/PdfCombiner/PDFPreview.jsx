@@ -41,9 +41,10 @@ const PDFPreview = ({ src }) => {
 
   return preview ? (
     <img
-      src={preview}
-      alt="PDF preview"
-      style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        src={preview}
+        alt="PDF preview"
+        draggable={false}
+        style={{ width: "100%", height: "100%", objectFit: "contain" }}
     />
   ) : (
     <div>Loading preview...</div>
