@@ -145,6 +145,9 @@ const FileConverter = () => {
       <Typography variant="h4" gutterBottom>
         File Converter
       </Typography>
+      <Typography variant="body1" gutterBottom>
+        Upload a file to convert it to a different format. Supports common image, audio, and video formats.
+      </Typography>
           <UploadBox>
         <input
           type="file"
@@ -154,7 +157,7 @@ const FileConverter = () => {
         />
         <label htmlFor="file-upload">
           <Button variant="contained" component="span">
-            Upload File
+            Upload File (Max. 2GB)
           </Button>
         </label>
         {file && 
