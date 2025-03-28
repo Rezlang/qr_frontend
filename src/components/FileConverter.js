@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Container, Box, Button, Typography } from '@mui/material';
+import { Container, Box, Button, Typography, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import { styled } from '@mui/system';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
@@ -21,6 +21,7 @@ const ResultBox = styled(Box)({
 
 const FileConverter = () => {
   const [file, setFile] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
   const [result, setResult] = useState(null);
   const [inputType, setInputType] = useState(null);
   const [outputType, setOutputType] = useState(null);
@@ -32,7 +33,15 @@ const FileConverter = () => {
     'jpeg': ['png', 'jpg', 'gif', 'webp'],
     'gif': ['png', 'jpg', 'jpeg', 'webp'],
     'webp': ['png', 'jpg', 'jpeg', 'gif'],
+    'mp3' : ['wav', 'ogg'],
+    'wav' : ['mp3', 'ogg'],
+    'ogg' : ['mp3', 'wav'],
+    'mp4' : ['mkv', 'avi', 'mov'],
+    'mkv' : ['mp4', 'avi', 'mov'],
+    'avi' : ['mp4', 'mkv', 'mov'],
+    'mov' : ['mp4', 'mkv', 'avi'],
   }
+
 
   const mimeTypes = {
     'png': 'image/png',
@@ -40,6 +49,13 @@ const FileConverter = () => {
     'jpeg': 'image/jpeg',
     'gif': 'image/gif',
     'webp': 'image/webp',
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'ogg': 'audio/ogg',
+    'mp4': 'video/mp4',
+    'mkv': 'video/x-matroska',
+    'avi': 'video/x-msvideo',
+    'mov': 'video/quicktime',
   }
 
   function extToMime(ext) {
@@ -56,7 +72,6 @@ const FileConverter = () => {
   const handleFileChange = (event) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      console.log(file)
       // Get the type of the file
       const fileType = file.name.split('.')[1];
       if (fileType in ffmpegMap) {
@@ -64,8 +79,11 @@ const FileConverter = () => {
       }
       else {
         console.error('Invalid file type');
+        setUploadError('Invalid file type');
+        setFile(null);
         return;
       }
+      setUploadError(null);
       setInputType(fileType);
       setOutputType(ffmpegMap[fileType][0]);
       setFile(file);
@@ -84,6 +102,7 @@ const FileConverter = () => {
     await ffmpeg.load({
         coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
     });
 
     console.log("Successfully loaded ffmpeg");
@@ -117,12 +136,16 @@ const FileConverter = () => {
     }
   };
 
+  const handleOutputTypeChange = (event) => {
+    setOutputType(event.target.value);
+  };
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
         File Converter
       </Typography>
-      <UploadBox>
+          <UploadBox>
         <input
           type="file"
           onChange={handleFileChange}
@@ -135,7 +158,15 @@ const FileConverter = () => {
           </Button>
         </label>
         {file && 
-        <Typography variant="body1">{file.name} ({formatFileSize(file.size)})</Typography>}
+        <Typography variant="body1">
+          {file.name} ({formatFileSize(file.size)})
+        </Typography>
+        }
+        {uploadError && ( // Display error message if uploadError is set
+          <Typography variant="body2" color="error" style={{ marginTop: '10px' }}>
+            {uploadError}
+          </Typography>
+        )}
       </UploadBox>
       <Button
         variant="contained"
@@ -145,6 +176,23 @@ const FileConverter = () => {
       >
         Convert
       </Button>
+      {inputType && (
+        <FormControl  style={{ marginLeft: '10px', minWidth: '100px' }}>
+          <InputLabel  id="output-type-label">Output Type</InputLabel>
+          <Select
+            
+            labelId="output-type-label"
+            value={outputType}
+            onChange={handleOutputTypeChange}
+          >
+            {ffmpegMap[inputType].map((type) => (
+              <MenuItem key={type} value={type}>
+                {type.toUpperCase()}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
       {result && (
         <ResultBox>
           <Typography variant="body1">{result}</Typography>
