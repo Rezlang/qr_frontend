@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Container, Box, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 const UploadBox = styled(Box)({
   border: '2px dashed #ccc',
@@ -20,26 +22,96 @@ const ResultBox = styled(Box)({
 const FileConverter = () => {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
+  const [inputType, setInputType] = useState(null);
+  const [outputType, setOutputType] = useState(null);
+  const ffmpegRef = useRef(new FFmpeg());
+
+  const ffmpegMap = {
+    'png': ['jpg', 'jpeg', 'gif', 'webp'],
+    'jpg': ['png', 'jpeg', 'gif', 'webp'],
+    'jpeg': ['png', 'jpg', 'gif', 'webp'],
+    'gif': ['png', 'jpg', 'jpeg', 'webp'],
+    'webp': ['png', 'jpg', 'jpeg', 'gif'],
+  }
+
+  const mimeTypes = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+  }
+
+  function extToMime(ext) {
+    return mimeTypes[ext] || null;
+  } 
+
+  const formatFileSize = (size) => {
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} kB`;
+    if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  };
 
   const handleFileChange = (event) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+      const file = event.target.files[0];
+      console.log(file)
+      // Get the type of the file
+      const fileType = file.name.split('.')[1];
+      if (fileType in ffmpegMap) {
+        setInputType(fileType);
+      }
+      else {
+        console.error('Invalid file type');
+        return;
+      }
+      setInputType(fileType);
+      setOutputType(ffmpegMap[fileType][0]);
+      setFile(file);
     }
   };
 
-  const handleConvert = () => {
-    // Placeholder for file conversion logic
+  const load = async () => {
+    console.log("Loading ffmpeg");
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    const ffmpeg = ffmpegRef.current;
+
+    ffmpeg.on('log', ({msg}) => {
+        console.log(msg);
+    });
+
+    await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+
+    console.log("Successfully loaded ffmpeg");
+}
+
+  const handleConvert = async () => {
+      setResult(null);
+      console.log("Attempting conversion")
+    const fileNameNoExt = file.name.split('.')[0];
+    const outputFile = `${fileNameNoExt}.${outputType}`;
     if (file) {
-      setResult(`Converted content of ${file.name}`);
+      await load();
+      const ffmpeg = ffmpegRef.current
+      await ffmpeg.writeFile(`${file.name}`, await fetchFile(file));
+      await ffmpeg.exec(['-i', `${file.name}`, outputFile]);
+      const data = await ffmpeg.readFile(outputFile);
+      setResult(data);
+      console.log("Completed Conversion");
     }
   };
 
   const handleDownload = () => {
+    console.log("attempting download");
     if (result) {
       const element = document.createElement('a');
-      const fileBlob = new Blob([result], { type: 'text/plain' });
+      const fileBlob = new Blob([result.buffer], { type: extToMime(outputType) });
       element.href = URL.createObjectURL(fileBlob);
-      element.download = 'converted_result.txt';
+      element.download = `converted_result.${outputType}`;
       document.body.appendChild(element);
       element.click();
     }
@@ -62,6 +134,8 @@ const FileConverter = () => {
             Upload File
           </Button>
         </label>
+        {file && 
+        <Typography variant="body1">{file.name} ({formatFileSize(file.size)})</Typography>}
       </UploadBox>
       <Button
         variant="contained"
