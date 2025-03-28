@@ -26,6 +26,7 @@ const FileConverter = () => {
   const [inputType, setInputType] = useState(null);
   const [outputType, setOutputType] = useState(null);
   const ffmpegRef = useRef(new FFmpeg());
+  const messageRef = useRef(null);
 
   const ffmpegMap = {
     'png': ['jpg', 'jpeg', 'gif', 'webp'],
@@ -75,18 +76,16 @@ const FileConverter = () => {
       // Get the type of the file
       const fileType = file.name.split('.')[1];
       if (fileType in ffmpegMap) {
+        setUploadError(null);
         setInputType(fileType);
+        setOutputType(ffmpegMap[fileType][0]);
+        setFile(file);
       }
       else {
-        console.error('Invalid file type');
         setUploadError('Invalid file type');
         setFile(null);
         return;
       }
-      setUploadError(null);
-      setInputType(fileType);
-      setOutputType(ffmpegMap[fileType][0]);
-      setFile(file);
     }
   };
 
@@ -95,14 +94,13 @@ const FileConverter = () => {
     const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
     const ffmpeg = ffmpegRef.current;
 
-    ffmpeg.on('log', ({msg}) => {
-        console.log(msg);
-    });
+    ffmpeg.on('progress', ({ progress, time }) => {
+      messageRef.current.innerHTML = `${(progress * 100).toFixed(2)}% (Time Elapsed: ${time / 1000000} s)`;
+  });
 
     await ffmpeg.load({
         coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
     });
 
     console.log("Successfully loaded ffmpeg");
@@ -130,7 +128,7 @@ const FileConverter = () => {
       const element = document.createElement('a');
       const fileBlob = new Blob([result.buffer], { type: extToMime(outputType) });
       element.href = URL.createObjectURL(fileBlob);
-      element.download = `converted_result.${outputType}`;
+      element.download = `converted-file.${outputType}`;
       document.body.appendChild(element);
       element.click();
     }
@@ -183,7 +181,6 @@ const FileConverter = () => {
         <FormControl  style={{ marginLeft: '10px', minWidth: '100px' }}>
           <InputLabel  id="output-type-label">Output Type</InputLabel>
           <Select
-            
             labelId="output-type-label"
             value={outputType}
             onChange={handleOutputTypeChange}
@@ -196,9 +193,10 @@ const FileConverter = () => {
           </Select>
         </FormControl>
       )}
+      <p ref={messageRef}></p>
       {result && (
         <ResultBox>
-          <Typography variant="body1">{result}</Typography>
+          <Typography variant="body1">{`converted-file.${outputType} (${formatFileSize(result.length)})`}</Typography>
           <Button variant="contained" color="secondary" onClick={handleDownload}>
             Download Result
           </Button>
