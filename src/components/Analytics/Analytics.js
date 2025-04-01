@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchReferrers, fetchAccessDates } from '../../services/api';
+import { fetchReferrers, fetchAccessDates, fetchUniqueVisitors } from '../../services/api';
 import { Pie, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -19,6 +19,7 @@ const Analytics = () => {
   const { shortenedUrl } = useParams();
   const [referrersData, setReferrersData] = useState(null);
   const [accessDatesData, setAccessDatesData] = useState(null);
+  const [uniqueVisitorsData, setUniqueVisitorsData] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -26,10 +27,15 @@ const Analytics = () => {
       try {
         const refData = await fetchReferrers(shortenedUrl);
         const datesData = await fetchAccessDates(shortenedUrl);
-          console.log("ref data", refData)
-          console.log("date data", datesData)
+        const uniqueVisitors = await fetchUniqueVisitors(shortenedUrl);
+
+        console.log("ref data", refData)
+        console.log("date data", datesData)
+        console.log("unique visitors", uniqueVisitors)
+
         setReferrersData(refData.referrers);
         setAccessDatesData(datesData.access_dates);
+        setUniqueVisitorsData(uniqueVisitors);
       } catch (err) {
         setError(err.message);
       }
@@ -82,6 +88,9 @@ const Analytics = () => {
       <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
         <h3>Access Dates Histogram</h3>
         <Bar data={barChartData} />
+      </div>
+      <div>
+        Unique Visitors: {uniqueVisitorsData.unique_visitors}
       </div>
     </div>
   );

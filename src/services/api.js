@@ -64,3 +64,11 @@ export const fetchAccessDates = async (shortenedUrl) => {
   }
   return response.json();
 };
+
+export const fetchUniqueVisitors = async (shortenedUrl) => {
+  const response = await fetch(`http://${APIURL}/analytics/${shortenedUrl}/unique-visitors`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch unique visitors data');
+  }
+  return response.json();
+}
