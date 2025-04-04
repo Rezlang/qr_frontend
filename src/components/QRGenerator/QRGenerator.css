@@ -1,0 +1,80 @@
+/* Container for the entire QR generator */
+.qr-gen {
+  /* Center and constrain width */
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 8px;
+
+  /* Light mode defaults */
+  background-color: var(--background-light);
+  color: var(--text-light);
+
+  /* Subtle shadow and smooth transitions */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Headline style */
+.qr-gen h1 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+/* When using dark mode (for instance, by adding a .dark-mode class
+   to the root or body element), override to these colors */
+.dark-mode .qr-gen {
+  background-color: var(--background-dark);
+  color: var(--text-dark);
+}
+
+/* Flex container for the URL input, custom alias input, and button */
+.input-line {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Container for color picker and icon upload button */
+.customize {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Small heading above the color picker */
+.color-picker h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* The section containing the generated QR and shortened URL */
+.results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+/* Spacing around the actual QR code element */
+.qr-code-container {
+  position: relative; /* for icon overlay */
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+/* Container for the download buttons */
+.download-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
