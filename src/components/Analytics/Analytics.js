@@ -4,7 +4,7 @@ import {
   fetchReferrers,
   fetchAccessDates,
   fetchUniqueVisitors,
-  fetchHourlyPatterns
+  fetchHourlyPatterns,
 } from '../../services/api';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import {
@@ -24,29 +24,30 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 const Analytics = () => {
   const { shortenedUrl } = useParams();
-  const [referrersData, setReferrersData] = useState(null);
-  const [accessDatesData, setAccessDatesData] = useState(null);
-  const [uniqueVisitorsData, setUniqueVisitorsData] = useState(null);
-  const [hourlyPatternsData, setHourlyPatternsData] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState({
+    referrersData: null,
+    accessDatesData: null,
+    uniqueVisitorsData: null,
+    hourlyPatternsData: null,
+  });
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const refData = await fetchReferrers(shortenedUrl);
-        const datesData = await fetchAccessDates(shortenedUrl);
-        const uniqueVisitors = await fetchUniqueVisitors(shortenedUrl);
-        const hourlyPatterns = await fetchHourlyPatterns(shortenedUrl);
+        const [refData, datesData, uniqueVisitors, hourlyPatterns] = await Promise.all([
+          fetchReferrers(shortenedUrl),
+          fetchAccessDates(shortenedUrl),
+          fetchUniqueVisitors(shortenedUrl),
+          fetchHourlyPatterns(shortenedUrl),
+        ]);
 
-        console.log("ref data", refData)
-        console.log("date data", datesData)
-        console.log("unique visitors", uniqueVisitors)
-        console.log("hourly patterns", hourlyPatterns)
-
-        setReferrersData(refData.referrers);
-        setAccessDatesData(datesData.access_dates);
-        setUniqueVisitorsData(uniqueVisitors);
-        setHourlyPatternsData(hourlyPatterns);
+        setAnalyticsData({
+          referrersData: refData.referrers,
+          accessDatesData: datesData.access_dates,
+          uniqueVisitorsData: uniqueVisitors,
+          hourlyPatternsData: hourlyPatterns,
+        });
       } catch (err) {
         setError(err.message);
       }
@@ -56,14 +57,14 @@ const Analytics = () => {
   }, [shortenedUrl]);
 
   if (error) return <div>Error: {error}</div>;
-  if (!referrersData || !accessDatesData) return <div>Loading analytics...</div>;
+  if (!analyticsData.referrersData || !analyticsData.accessDatesData) return <div>Loading analytics...</div>;
 
   // Prepare data for the Pie Chart (Referrers)
   const pieChartData = {
-    labels: Object.keys(referrersData),
+    labels: Object.keys(analyticsData.referrersData),
     datasets: [
       {
-        data: Object.values(referrersData),
+        data: Object.values(analyticsData.referrersData),
         backgroundColor: [
           '#FF6384',
           '#36A2EB',
@@ -77,29 +78,31 @@ const Analytics = () => {
   };
 
   // Prepare data for the Bar Chart (Access Dates)
-  const sortedDates = Object.keys(accessDatesData).sort();
-  const barChartData = {
+  const sortedDates = Object.keys(analyticsData.accessDatesData).sort();
+  const accessDateChart = {
     labels: sortedDates,
     datasets: [
       {
         label: 'Access Count',
-        data: sortedDates.map((date) => accessDatesData[date]),
+        data: sortedDates.map((date) => analyticsData.accessDatesData[date]),
         backgroundColor: 'rgba(75,192,192,0.6)',
       },
     ],
   };
 
   // Prepare data for the Line Chart (Hourly Patterns)
-  const sortedHours = Object.keys(hourlyPatternsData.hourly_patterns)
+  const sortedHours = Object.keys(analyticsData.hourlyPatternsData.hourly_patterns)
   .map((hour) => Number(hour))
-  .filter((hour) => !isNaN(hour)) // Filter out any non-numeric values
+  .filter((hour) => !isNaN(hour))
   .sort((a, b) => a - b);
   
-  const lineChartData = {
+  const hourlyPatternChart = {
     labels: sortedHours,
     datasets: [
       {
-        data: sortedHours.map((hour) => Math.max(0, Number(hourlyPatternsData.hourly_patterns[hour]) || 0)), 
+        data: sortedHours.map((hour) => 
+          Math.max(0, Number(analyticsData.hourlyPatternsData.hourly_patterns[hour]) 
+        || 0)), 
         borderColor: "rgba(255,99,132,1)",
         backgroundColor: "rgba(255,99,132,0.2)",
       },
@@ -137,14 +140,14 @@ const Analytics = () => {
       </div>
       <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
         <h3>Access Dates Histogram</h3>
-        <Bar data={barChartData} options={chartOptions} />
+        <Bar data={accessDateChart} options={chartOptions} />
       </div>
       <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
         <h3>Hourly Access Patterns</h3>
-        <Line data={lineChartData} options={chartOptions} />
+        <Line data={hourlyPatternChart} options={chartOptions} />
       </div>
       <div>
-        Unique Visitors: {uniqueVisitorsData.unique_visitors}
+        Unique Visitors: {analyticsData.uniqueVisitorsData.unique_visitors}
       </div>
     </div>
   );
