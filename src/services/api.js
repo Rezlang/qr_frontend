@@ -73,8 +73,16 @@ export const fetchUniqueVisitors = async (shortenedUrl) => {
   return response.json();
 }
 
-export const fetchHourlyPatterns = async (shortendedURL) => {
-  const response = await fetch(`http://${APIURL}/analytics/${shortendedURL}/hourly-patterns`);
+export const fetchHourlyPatterns = async (shortendedUrl) => {
+  const response = await fetch(`http://${APIURL}/analytics/${shortendedUrl}/hourly-patterns`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch hourly patterns data');
+  }
+  return response.json();
+};
+
+export const fetchOriginalURLNoRedirect = async (shortenedUrl) => {
+  const response = await fetch(`http://${APIURL}/${shortenedUrl}/url`);
   if (!response.ok) {
     throw new Error('Failed to fetch hourly patterns data');
   }

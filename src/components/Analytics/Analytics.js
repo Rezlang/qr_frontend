@@ -5,6 +5,7 @@ import {
   fetchAccessDates,
   fetchUniqueVisitors,
   fetchHourlyPatterns,
+  fetchOriginalURLNoRedirect,
 } from '../../services/api';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import {
@@ -29,17 +30,19 @@ const Analytics = () => {
     accessDatesData: null,
     uniqueVisitorsData: null,
     hourlyPatternsData: null,
+    originalURLData: null,
   });
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [refData, datesData, uniqueVisitors, hourlyPatterns] = await Promise.all([
+        const [refData, datesData, uniqueVisitors, hourlyPatterns, originalURL] = await Promise.all([
           fetchReferrers(shortenedUrl),
           fetchAccessDates(shortenedUrl),
           fetchUniqueVisitors(shortenedUrl),
           fetchHourlyPatterns(shortenedUrl),
+          fetchOriginalURLNoRedirect(shortenedUrl),
         ]);
 
         setAnalyticsData({
@@ -47,6 +50,7 @@ const Analytics = () => {
           accessDatesData: datesData.access_dates,
           uniqueVisitorsData: uniqueVisitors,
           hourlyPatternsData: hourlyPatterns,
+          originalURLData: originalURL,
         });
       } catch (err) {
         setError(err.message);
@@ -132,22 +136,89 @@ const Analytics = () => {
   };
   
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>Analytics</h2>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h3>Referrer Distribution</h3>
-        <Pie data={pieChartData} />
-      </div>
-      <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
-        <h3>Access Dates Histogram</h3>
-        <Bar data={accessDateChart} options={chartOptions} />
-      </div>
-      <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
-        <h3>Hourly Access Patterns</h3>
-        <Line data={hourlyPatternChart} options={chartOptions} />
-      </div>
-      <div>
-        Unique Visitors: {analyticsData.uniqueVisitorsData.unique_visitors}
+    <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+      <div style={{ maxWidth: '1200px', width: '100%' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Analytics</h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1.5rem',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <h3 style={{ textAlign: 'center' }}>Referrer Distribution</h3>
+            <Pie data={pieChartData} />
+          </div>
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <h3 style={{ textAlign: 'center' }}>Access Dates Histogram</h3>
+            <Bar data={accessDateChart} options={chartOptions} />
+          </div>
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <h3 style={{ textAlign: 'center' }}>Hourly Access Patterns</h3>
+            <Line data={hourlyPatternChart} options={chartOptions} />
+          </div>
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <h3>Unique Visitors: {analyticsData.uniqueVisitorsData.unique_visitors}</h3>
+          </div>
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <h3>Short URL: {shortenedUrl}</h3>
+          </div>
+          <div
+            style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <h3>Redirects to: <br /> {analyticsData.originalURLData.url}</h3>
+          </div>
+        </div>
       </div>
     </div>
   );
