@@ -2,6 +2,7 @@
 import React from 'react';
 import QRSHeader
  from '../components/Header/QRSHeader';
+import HomeTables from '../components/HomeTables';
 const Home = () => {
   return (
     <div className="App">
@@ -9,7 +10,7 @@ const Home = () => {
         {/* You can include your logo or other header content here */}
         <QRSHeader />
       </header>
-      <h1>Hey man, this is me testing</h1>
+      <HomeTables />
     </div>
   );
 };

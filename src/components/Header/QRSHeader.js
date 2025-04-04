@@ -8,10 +8,12 @@ export default function QRSHeader() {
     const location = useLocation();
 
     const pages = [
-        { label: "URL Shortener", path: "/shorten" },
-        { label: "Analytics", path: "/analytics" },
-        { label: "Document Signer", path: "/docsigner" },
-        { label: "File Converter", path: "/fileconv" },
+        { label: "URL Shortener", path: "/url-shortener" },
+        { label: "QR Generator", path: "/qr-gen"},
+        { label: "Document Signer", path: "/pdf" },
+        { label: "File Converter", path: "/converter" },
+        { label: "Combine PDFs", path: "/combine" },
+        
     ];
     return (
     <AppBar position="static" sx={{ backgroundColor: "#1976d2" }}>
