@@ -105,6 +105,28 @@ const Analytics = () => {
       },
     ],
   };
+
+  const chartOptions = {
+    plugins: {
+      legend: {
+        display: false, // Hide legend
+      },
+      tooltip: {
+        callbacks: {
+          title: () => "", // Hide title in tooltip
+          label: (tooltipItem) => `${tooltipItem.raw}`, // Show only value
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+      },
+    },
+  };
   
   return (
     <div style={{ padding: '2rem' }}>
@@ -115,11 +137,11 @@ const Analytics = () => {
       </div>
       <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
         <h3>Access Dates Histogram</h3>
-        <Bar data={barChartData} />
+        <Bar data={barChartData} options={chartOptions} />
       </div>
       <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
         <h3>Hourly Access Patterns</h3>
-        <Line data={lineChartData} />
+        <Line data={lineChartData} options={chartOptions} />
       </div>
       <div>
         Unique Visitors: {uniqueVisitorsData.unique_visitors}
