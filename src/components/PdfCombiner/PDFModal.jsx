@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Modal, Box, Typography, IconButton } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import PDFPreview from "./PDFPreview";
+import PDFPreview from "./ModalPreview";
 
 const PreviewModal = ({ open, onClose, previewUrl, advancedMode, fileName }) => {
   const [page, setPage] = useState(1);

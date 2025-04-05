@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import Draggable from "react-draggable";
-import PreviewModal from "./PreviewModal"; // Import the modal component
-import PDFPreview from "./PDFPreview";
+import PreviewModal from "./PDFModal"; // Import the modal component
+import PDFPreview from "./ModalPreview";
 
 const Slider = ({
   items,
