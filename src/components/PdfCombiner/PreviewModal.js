@@ -5,11 +5,9 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import PDFPreview from "./PDFPreview";
 
 const PreviewModal = ({ open, onClose, previewUrl, advancedMode, fileName }) => {
-  // Only used in basic mode to navigate pages
   const [page, setPage] = useState(1);
 
   const handlePrev = (e) => {
-    // Prevent the modal from closing if the button is clicked
     e.stopPropagation();
     setPage((prev) => Math.max(prev - 1, 1));
   };
@@ -19,14 +17,12 @@ const PreviewModal = ({ open, onClose, previewUrl, advancedMode, fileName }) => 
     setPage((prev) => prev + 1);
   };
 
-  // Clicking the backdrop closes the modal.
   const handleBackdropClick = () => {
     onClose();
   };
 
   return (
     <Modal open={open} onClose={onClose}>
-      {/* Fullscreen container catches backdrop clicks */}
       <Box
         onClick={handleBackdropClick}
         sx={{
@@ -42,46 +38,48 @@ const PreviewModal = ({ open, onClose, previewUrl, advancedMode, fileName }) => 
           p: 2,
         }}
       >
-        {/* Prevent click events inside the modal content from propagating */}
         <Box
           onClick={(e) => e.stopPropagation()}
           sx={{
             backgroundColor: "background.paper",
             p: 2,
-            maxHeight: "90%",
-            maxWidth: "90%",
-            overflowY: advancedMode ? "hidden" : "auto",
+            maxHeight: "90vh",
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          <Typography variant="h6" gutterBottom>
-            {fileName}
-          </Typography>
-          {advancedMode ? (
-            // In advanced mode, show only a single (first) page.
-            <PDFPreview src={previewUrl} page={1} />
-          ) : (
-            <>
-              {/* In basic mode, show the selected page. You may need to adjust PDFPreview to accept a "page" prop. */}
-              <PDFPreview src={previewUrl} page={page} />
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  mt: 2,
-                }}
-              >
-                <IconButton onClick={handlePrev} disabled={page === 1}>
-                  <ArrowBackIcon />
-                </IconButton>
-                <Typography variant="body1" sx={{ mx: 2 }}>
-                  {page}
-                </Typography>
-                <IconButton onClick={handleNext}>
-                  <ArrowForwardIcon />
-                </IconButton>
-              </Box>
-            </>
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflow: "auto",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <PDFPreview src={previewUrl} page={advancedMode ? 1 : page} />
+          </Box>
+
+          {!advancedMode && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                mt: 2,
+              }}
+            >
+              <IconButton onClick={handlePrev} disabled={page === 1}>
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography variant="body1" sx={{ mx: 2 }}>
+                {page}
+              </Typography>
+              <IconButton onClick={handleNext}>
+                <ArrowForwardIcon />
+              </IconButton>
+            </Box>
           )}
         </Box>
       </Box>
