@@ -41,11 +41,7 @@ const UrlShortener = () => {
       hash = await computeHash(password + salt);
     }
 
-    function cleanData(obj) {
-      return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null));
-    }
-
-    const rawData = {
+    const data = {
       url,
       custom_alias: customAlias || null,
       salt,  // Will be null if no password is provided.
@@ -54,8 +50,6 @@ const UrlShortener = () => {
       group,  // Placeholder for user group
       description,  // Placeholder for description
     };
-
-    const data = cleanData(rawData);
     
     try {
       if (data.url.trim() !== '') {
