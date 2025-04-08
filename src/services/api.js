@@ -66,7 +66,12 @@ export const fetchAccessDates = async (shortenedUrl) => {
 };
 
 export const fetchUserUrls = async (uid) => {
-  const response = await fetch(`http://${APIURL}/${uid}/urls`);
+  const response = await fetch(`http://${APIURL}/analytics/${uid}/urls`, {
+      method: 'GET',
+      headers: {
+     'Content-Type': 'application/json',
+    },
+  });
     
   if (!response.ok) {
     throw new Error('Failed to fetch user URLs');
