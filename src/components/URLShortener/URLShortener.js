@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { DefaultCopyField } from '@eisberg-labs/mui-copy-field';
+import { getAuth } from 'firebase/auth';
 import { shortenUrl } from '../../services/api';
 import './URLShortener.css';
 
@@ -31,7 +32,7 @@ const UrlShortener = () => {
   const handleSubmit = async () => {
     let salt = null;
     let hash = null;
-    let uid  = null;
+    let uid  = getAuth().currentUser?.uid || null; // Get the current user's UID
     let group = null;
     let description = null;
 
