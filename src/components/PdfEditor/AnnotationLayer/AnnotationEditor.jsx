@@ -67,7 +67,9 @@ const ClickableAnnotationWrapper = ({ children, onClick }) => {
   };
 
   return (
-    <div onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
+    <div style={{ width: '100%', height: '100%' }}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}>
       {children}
     </div>
   );
