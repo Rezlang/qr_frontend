@@ -6,7 +6,6 @@ import RedirectPage from './pages/RedirectPage';
 import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import { initializeApp } from 'firebase/app';
-import { initializeAnalytics } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './firebaseConfig';
@@ -16,6 +15,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import PdfPage from './pages/PdfPage';
 import PdfCombiner from './pages/PdfCombinerPage'
 import QRGeneratorPage from './pages/QRGenerator';
+
 function App() {
   return (
     <BrowserRouter>
@@ -37,7 +37,6 @@ function App() {
 
 
 const app = initializeApp(firebaseConfig);
-const analytics = initializeAnalytics(app);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export default App;

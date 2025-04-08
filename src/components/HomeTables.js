@@ -12,8 +12,9 @@ export default function HomeTables() {
           if (userCredential) {
             try {
             const urls = await fetchUserUrls(userCredential.uid);
+            console.log("Success, got something.");
             console.log(urls);
-            // setUrlData(urls);
+            setUrlData(urls);
             
     
             

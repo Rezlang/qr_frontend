@@ -6,8 +6,12 @@ const ScrollableTable = ({ data }) => {
     return <p className="text-center text-gray-500">There's nothing here.</p>;
   }
 
-  // Extract column headers dynamically
-  const columns = Object.keys(data[0]);
+  const columns = ["None"]
+  
+  // for (let i = 0; i < data.length; i++) {
+  //   const element = array[i];
+    
+  // }
 
   return (
     <TableContainer component={Paper} style={{ maxHeight: 400 }}>

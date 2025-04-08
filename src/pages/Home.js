@@ -7,7 +7,6 @@ const Home = () => {
   return (
     <div className="App">
       <header className="App-header">
-        {/* You can include your logo or other header content here */}
         <QRSHeader />
       </header>
       <HomeTables />
