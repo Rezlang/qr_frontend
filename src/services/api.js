@@ -88,3 +88,16 @@ export const fetchOriginalURLNoRedirect = async (shortenedUrl) => {
   }
   return response.json();
 };
+export const fetchUserUrls = async (uid) => {
+  const response = await fetch(`http://${APIURL}/analytics/${uid}/urls`, {
+      method: 'GET',
+      headers: {
+     'Content-Type': 'application/json',
+    },
+  });
+    
+  if (!response.ok) {
+    throw new Error('Failed to fetch user URLs');
+  }
+  return response.json();
+};

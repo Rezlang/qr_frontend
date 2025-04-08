@@ -18,11 +18,9 @@ import AppTheme from './theme/AppTheme';
 import ColorModeSelect from './theme/ColorModeSelect';
 import { GoogleIcon, SitemarkIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth, db } from '../../App';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-
-
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -65,14 +63,15 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
   },
 }));
 
-export default function Signin(props) {
+export default function Signup(props) {
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
+  const [confirmError, setConfirmError] = React.useState(false);
+  const [confirmErrorMessage, setConfirmErrorMessage] = React.useState('');
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
-  const [loading, setLoading] = React.useState(true);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -94,15 +93,26 @@ export default function Signin(props) {
     }
   }
 
+  const googleSignIn = async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.error("Google Sign-In Error:", e);
+      }
+    };
+
   React.useEffect(() => {
     // Subscribe to auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
-      if (userCredential) {
+    if (userCredential) {
         // User is signed in
-        // Make sure they have a document in the firebase
+        // Put them into firebase
         const exists = await checkIfDocExists('users', userCredential.uid);
         if (!exists) {
+
           const userRef = doc(db, "users", userCredential.uid);
+          
           try {
             await setDoc(userRef, {
               premium:false,
@@ -112,11 +122,8 @@ export default function Signin(props) {
             console.error("Failed to store user information:", e.message);
           }
         }
-
         navigate("/home", {replace : true});
-
       }
-      setLoading(false);
     });
     // Cleanup on unmount
     return () => unsubscribe();
@@ -125,7 +132,7 @@ export default function Signin(props) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     
-    if (emailError || passwordError) {
+    if (emailError || passwordError || confirmError) {
       console.log("Failed to handle submission");
       return;
     }
@@ -134,7 +141,7 @@ export default function Signin(props) {
     const password = data.get('password');
 
     try {
-      let response = await signInWithEmailAndPassword(auth,
+      let response = await createUserWithEmailAndPassword(auth,
         email,
         password,
       );
@@ -146,18 +153,10 @@ export default function Signin(props) {
     }
   };
 
-  const googleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (e) {
-      console.error("Google Sign-In Error:", e);
-    }
-  };
-
   const validateInputs = () => {
     const email = document.getElementById('email');
     const password = document.getElementById('password');
+    const password_confirm = document.getElementById('password-confirmation');
 
     let isValid = true;
 
@@ -179,10 +178,17 @@ export default function Signin(props) {
       setPasswordErrorMessage('');
     }
 
+    if (!password_confirm.value || password.value !== password_confirm.value) {
+      setConfirmError(true);
+      setConfirmErrorMessage('Password must match.');
+      isValid = false;
+    } else {
+      setConfirmError(false);
+      setConfirmErrorMessage('');
+    }
+
     return isValid;
   };
-
-  if (loading) return <div>Loading...</div>;
 
   return (
     <AppTheme {...props}>
@@ -196,7 +202,7 @@ export default function Signin(props) {
             variant="h4"
             sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
           >
-            Sign in
+            Sign Up
           </Typography>
           <Box
             component="form"
@@ -243,19 +249,36 @@ export default function Signin(props) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
+            <FormControl>
+              <FormLabel htmlFor="password">Confirm Password</FormLabel>
+              <TextField
+                error={confirmError}
+                helperText={confirmErrorMessage}
+                name="password-confirmation"
+                placeholder="••••••"
+                type="password"
+                id="password-confirmation"
+                autoComplete="current-password"
+                autoFocus
+                required
+                fullWidth
+                variant="outlined"
+                color={passwordError ? 'error' : 'primary'}
+              />
+            </FormControl>
             <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
+            <ForgotPassword open={open} handleClose={handleClose} />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               onClick={validateInputs}
             >
-              Sign in
+              Sign Up
             </Button>
-            <ForgotPassword open={open} handleClose={handleClose} />
             <Link
               component="button"
               type="button"
@@ -274,16 +297,16 @@ export default function Signin(props) {
               onClick={googleSignIn}
               startIcon={<GoogleIcon />}
             >
-              Sign in with Google
+              Sign up with Google
             </Button>
             <Typography sx={{ textAlign: 'center' }}>
-              Don&apos;t have an account?{' '}
+              Already have an account?{' '}
               <Link
-                href="/"
+                href="/signin"
                 variant="body2"
                 sx={{ alignSelf: 'center' }}
               >
-                Sign up
+                Sign in
               </Link>
             </Typography>
           </Box>
