@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Button, Switch, Typography } from "@mui/material";
 import FileList from "./FileList";
 import Slider from "./Slider";
-import { usePDFProcessor } from "./usePDFProcessor";
+import { usePDFProcessor } from "./miniPreview";
 import FileDropZone from "../FileDropZone/FileDropZone";
 
 const PDFCombiner = () => {
@@ -21,7 +21,7 @@ const PDFCombiner = () => {
     combinePDFs,
   } = usePDFProcessor();
 
-  const containerWidth = orderedItems.length * (itemWidth + gap);
+  const containerWidth = "100%";
 
   return (
     <Box sx={{ p: 4 }}>

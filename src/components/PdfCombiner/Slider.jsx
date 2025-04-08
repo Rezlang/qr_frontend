@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import Draggable from "react-draggable";
-import PreviewModal from "./PreviewModal"; // Import the new modal component
-import PDFPreview from "./PDFPreview";
+import PreviewModal from "./PDFModal"; // Import the modal component
+import PDFPreview from "./ModalPreview";
 
 const Slider = ({
   items,
@@ -34,7 +34,7 @@ const Slider = ({
         sx={{
           position: "relative",
           width: containerWidth,
-          height: itemHeight,
+          height: itemHeight + 17, // now exactly the height of the item (preview + label)
           border: "1px solid",
           borderColor: "divider",
           borderRadius: 1,
@@ -58,27 +58,32 @@ const Slider = ({
                 border: "1px solid",
                 borderColor: "divider",
                 borderRadius: 1,
-                backgroundColor:
-                  item.type === "file" ? "background.paper" : "grey.100",
+                backgroundColor: "grey.100",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
+                justifyContent: "space-between",
                 position: "absolute",
                 cursor: "move",
                 userSelect: "none",
                 p: 1,
               }}
             >
-              <Box sx={{ width: "100%", height: "80%" }}>
-                {/* Use PDFPreview to show a small preview in the slider */}
-                <PDFPreview src={item.previewUrl} />
+              {/* Preview area: make it take all available space except the 25px reserved for the label */}
+              <Box sx={{ width: "100%", height: "calc(100% - 25px)" }}>
+                <PDFPreview
+                  src={item.previewUrl}
+                  advancedMode={advancedMode}
+                  style={{ width: "100%", height: "100%" }}
+                />
               </Box>
+              {/* Label area */}
               <Typography
                 sx={{
-                  fontSize: advancedMode ? 12 : 14,
-                  mt: 0.5,
+                  fontSize: 12,
                   textAlign: "center",
+                  height: "25px",
+                  lineHeight: "25px",
                 }}
               >
                 {item.type === "file"
