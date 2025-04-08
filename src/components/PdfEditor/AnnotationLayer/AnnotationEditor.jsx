@@ -208,12 +208,12 @@ const AnnotationEditor = ({
               <CheckboxAnnotation ann={ann} toggleCheckboxAnnotation={toggleCheckboxAnnotation} />
             )}
             {ann.type === 'signature' && (
-              <ClickableAnnotationWrapper onClick={() => onSignatureClick(ann.id)}>
+              <ClickableAnnotationWrapper onClick={() => onSignatureClick(ann)}>
                 <SignatureAnnotation ann={ann} />
               </ClickableAnnotationWrapper>
             )}
             {ann.type === 'image' && (
-              <ClickableAnnotationWrapper onClick={() => onImageClick(ann.id)}>
+              <ClickableAnnotationWrapper onClick={() => onImageClick(ann)}>
                 <ImageAnnotation ann={ann} />
               </ClickableAnnotationWrapper>
             )}

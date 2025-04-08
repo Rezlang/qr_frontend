@@ -7,8 +7,8 @@ export const usePDFProcessor = () => {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [orderedItems, setOrderedItems] = useState([]);
 
-  const itemWidth = advancedMode ? 120 : 160;
-  const itemHeight = advancedMode ? 160 : 120;
+  const itemWidth = 120;
+  const itemHeight = 160;
   const gap = 16;
 
   const handleFileUpload = async (files) => {
@@ -29,7 +29,7 @@ export const usePDFProcessor = () => {
               new Blob([singlePageBytes], { type: "application/pdf" })
             );
             return {
-              name: `${file.name} - Page ${idx + 1}`,
+              name: `${file.name} (${idx + 1})`,
               bytes: singlePageBytes,
               previewUrl: pagePreviewUrl,
             };

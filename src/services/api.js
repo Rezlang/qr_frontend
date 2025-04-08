@@ -2,11 +2,15 @@
 
 const APIURL = "127.0.0.1:8000";
 
+function cleanData(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null));
+}
+
 export const shortenUrl = async (data) => {
   const response = await fetch(`http://${APIURL}/url/shorten`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify(cleanData(data)),
   });
   if (!response.ok) {
     throw new Error('Failed to shorten URL');
