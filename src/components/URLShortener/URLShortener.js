@@ -31,6 +31,9 @@ const UrlShortener = () => {
   const handleSubmit = async () => {
     let salt = null;
     let hash = null;
+    let uid  = null;
+    let group = null;
+    let description = null;
 
     // If a password is provided, generate a salt and compute its SHA-256 hash combined with the salt.
     if (password.trim() !== '') {
@@ -38,13 +41,22 @@ const UrlShortener = () => {
       hash = await computeHash(password + salt);
     }
 
-    const data = {
+    function cleanData(obj) {
+      return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null));
+    }
+
+    const rawData = {
       url,
       custom_alias: customAlias || null,
       salt,  // Will be null if no password is provided.
       hash,  // Will be null if no password is provided.
+      uid,  // Placeholder for user ID
+      group,  // Placeholder for user group
+      description,  // Placeholder for description
     };
 
+    const data = cleanData(rawData);
+    
     try {
       if (data.url.trim() !== '') {
         console.log('Submitting:', data);
