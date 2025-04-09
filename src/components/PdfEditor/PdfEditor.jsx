@@ -38,6 +38,7 @@ const PdfEditor = () => {
       setPdfDimensions({ width: page.getWidth(), height: page.getHeight() });
     }
   };
+  
 
   const handleGeneratePdf = async () => {
     await generatePdf({ basePdf, annotations, pdfDimensions });
@@ -47,6 +48,15 @@ const PdfEditor = () => {
   const handleAddAnnotation = (annotation) => {
     setAnnotations((prev) => [...prev, annotation]);
   };
+
+  const updateSplineAnnotation = (updatedAnnotation) => {
+    setAnnotations((prevAnnotations) =>
+      prevAnnotations.map((ann) =>
+        ann.id === updatedAnnotation.id ? updatedAnnotation : ann
+      )
+    );
+  };
+  
 
   const updateAnnotationPosition = (id, x, y) => {
     setAnnotations((prev) =>
@@ -183,6 +193,7 @@ const PdfEditor = () => {
               onImageClick={handleImageClick}
               currentTool={currentTool}
               onCreateAnnotation={handleAddAnnotation}
+              updateSplineAnnotation={updateSplineAnnotation}
               pdfDimensions={pdfDimensions}
               mode={mode}
             />
@@ -206,6 +217,7 @@ const PdfEditor = () => {
             onAddSignatureTool={() => setCurrentTool('signature')}
             onAddCheckboxTool={() => setCurrentTool('checkbox')}
             onGeneratePdf={handleGeneratePdf}
+            onAddPencilTool={() => setCurrentTool('pencil')}
           />
           <ToggleButtonGroup
             value={mode}

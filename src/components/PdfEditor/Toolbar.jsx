@@ -16,6 +16,7 @@ const Toolbar = ({
   onAddSignatureTool,
   onAddCheckboxTool,
   onGeneratePdf,
+  onAddPencilTool
 }) => {
   return (
     <Card sx={{ ml: 2, width: 200, mt: 6.5, mb: 6.5 }}>
@@ -61,6 +62,13 @@ const Toolbar = ({
           <ListItemButton onClick={onAddCheckboxTool} sx={{ justifyContent: 'center' }}>
             <ListItemText
               primary="Check Box"
+            />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={onAddPencilTool} sx={{ justifyContent: 'center' }}>
+            <ListItemText
+              primary="Pencil"
             />
           </ListItemButton>
         </ListItem>

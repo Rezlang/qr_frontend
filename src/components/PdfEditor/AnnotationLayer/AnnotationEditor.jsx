@@ -5,6 +5,7 @@ import TextAnnotation from './AnnotationTools/TextAnnotation.jsx';
 import CheckboxAnnotation from './AnnotationTools/CheckboxAnnotation';
 import SignatureAnnotation from './AnnotationTools/SignatureAnnotation';
 import ImageAnnotation from './AnnotationTools/ImageAnnotation';
+import SplineAnnotation from './AnnotationTools/SplineAnnotation';
 
 export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   let x, y, width, height;
@@ -42,10 +43,23 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
       return { ...baseAnnotation, type: 'signature', file: null, url: null };
     case 'checkbox':
       return { ...baseAnnotation, type: 'checkbox', checked: false };
+    case 'pencil': // pencil/spline tool
+      // Initialize with a single point to start drawing from
+      const centerX = (startX + currentX) / 2;
+      const centerY = (startY + currentY) / 2; 
+      return {
+        ...baseAnnotation,
+        type: 'spline',
+        points: [], // Will be initialized when drawing starts
+        strokeColor: '#000000',
+        strokeWidth: 2,
+        complete: false, // Indicates that the stroke is in drawing mode
+      };
     default:
       return null;
   }
 };
+
 
 // Wrapper component to detect a click versus a drag
 const ClickableAnnotationWrapper = ({ children, onClick }) => {
@@ -85,6 +99,7 @@ const AnnotationEditor = ({
   onImageClick,
   currentTool,
   onCreateAnnotation,
+  updateSplineAnnotation,
   pdfDimensions,
   mode,
 }) => {
@@ -219,6 +234,13 @@ const AnnotationEditor = ({
                 <ImageAnnotation ann={ann} />
               </ClickableAnnotationWrapper>
             )}
+            {ann.type === 'spline' && (
+              <SplineAnnotation
+                annotation={ann}
+                updateAnnotation={updateSplineAnnotation}
+              />
+            )}
+
           </Box>
         </Draggable>
       ))}
