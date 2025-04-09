@@ -5,8 +5,11 @@ import TextAnnotation from './AnnotationTools/TextAnnotation.jsx';
 import CheckboxAnnotation from './AnnotationTools/CheckboxAnnotation';
 import SignatureAnnotation from './AnnotationTools/SignatureAnnotation';
 import ImageAnnotation from './AnnotationTools/ImageAnnotation';
-import SplineAnnotation from './AnnotationTools/SplineAnnotation';
+// Import the two spline tool components.
+import PencilTool from './AnnotationTools/Spline/PencilTool';
+import PenTool from './AnnotationTools/Spline/PenTool';
 
+// Modified createAnnotation to support both pencil and pen tools.
 export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   let x, y, width, height;
   if (tool === 'checkbox') {
@@ -43,25 +46,24 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
       return { ...baseAnnotation, type: 'signature', file: null, url: null };
     case 'checkbox':
       return { ...baseAnnotation, type: 'checkbox', checked: false };
-    case 'pencil': // pencil/spline tool
-      // Initialize with a single point to start drawing from
-      const centerX = (startX + currentX) / 2;
-      const centerY = (startY + currentY) / 2; 
+    case 'pencil':
+    case 'pen':
+      // For both pencil and pen tools, create a spline annotation.
       return {
         ...baseAnnotation,
         type: 'spline',
-        points: [], // Will be initialized when drawing starts
+        tool: tool, // distinguishes between 'pencil' (free draw) and 'pen' (click-to-add)
+        points: [], // points will be initialized when drawing starts
         strokeColor: '#000000',
         strokeWidth: 2,
-        complete: false, // Indicates that the stroke is in drawing mode
+        complete: false, // Indicates the stroke is in drawing mode
       };
     default:
       return null;
   }
 };
 
-
-// Wrapper component to detect a click versus a drag
+// Wrapper component to detect a click versus a drag.
 const ClickableAnnotationWrapper = ({ children, onClick }) => {
   const [mouseDownPos, setMouseDownPos] = useState(null);
 
@@ -81,9 +83,11 @@ const ClickableAnnotationWrapper = ({ children, onClick }) => {
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}
+    <div
+      style={{ width: '100%', height: '100%' }}
       onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}>
+      onMouseUp={handleMouseUp}
+    >
       {children}
     </div>
   );
@@ -106,7 +110,7 @@ const AnnotationEditor = ({
   const [selectionBox, setSelectionBox] = useState(null);
 
   const handleMouseDown = (e) => {
-    // Only start annotation creation if the click is directly on the container
+    // Only start annotation creation if the click is directly on the container.
     if (e.target !== e.currentTarget) return;
     if (!currentTool || mode === 'sign') return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -175,7 +179,7 @@ const AnnotationEditor = ({
       {annotations.map((ann) => (
         <Draggable
           key={ann.id}
-          // Use controlled positioning to ensure exact coordinates are used
+          // Use controlled positioning to ensure exact coordinates are used.
           position={{ x: ann.x, y: ann.y }}
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
           disabled={mode === 'sign' || (ann.type === 'spline' && !ann.complete)}
@@ -235,12 +239,13 @@ const AnnotationEditor = ({
               </ClickableAnnotationWrapper>
             )}
             {ann.type === 'spline' && (
-              <SplineAnnotation
-                annotation={ann}
-                updateAnnotation={updateSplineAnnotation}
-              />
+              // Render the appropriate spline tool based on its "tool" property.
+              ann.tool === 'pen' ? (
+                <PenTool annotation={ann} updateAnnotation={updateSplineAnnotation} />
+              ) : (
+                <PencilTool annotation={ann} updateAnnotation={updateSplineAnnotation} />
+              )
             )}
-
           </Box>
         </Draggable>
       ))}

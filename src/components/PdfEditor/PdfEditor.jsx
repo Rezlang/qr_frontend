@@ -38,13 +38,12 @@ const PdfEditor = () => {
       setPdfDimensions({ width: page.getWidth(), height: page.getHeight() });
     }
   };
-  
 
   const handleGeneratePdf = async () => {
     await generatePdf({ basePdf, annotations, pdfDimensions });
   };
 
-  // Callback when AnnotationLayer creates a new annotation
+  // Callback when AnnotationLayer creates a new annotation.
   const handleAddAnnotation = (annotation) => {
     setAnnotations((prev) => [...prev, annotation]);
   };
@@ -56,7 +55,6 @@ const PdfEditor = () => {
       )
     );
   };
-  
 
   const updateAnnotationPosition = (id, x, y) => {
     setAnnotations((prev) =>
@@ -158,7 +156,14 @@ const PdfEditor = () => {
   };
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Box
+      sx={{
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <Box
           sx={{
@@ -191,7 +196,7 @@ const PdfEditor = () => {
               handleDeleteAnnotation={handleDeleteAnnotation}
               onSignatureClick={handleSignatureClick}
               onImageClick={handleImageClick}
-              currentTool={currentTool}
+              currentTool={currentTool} // current tool determines which spline tool to render (pencil/pen)
               onCreateAnnotation={handleAddAnnotation}
               updateSplineAnnotation={updateSplineAnnotation}
               pdfDimensions={pdfDimensions}
@@ -218,6 +223,7 @@ const PdfEditor = () => {
             onAddCheckboxTool={() => setCurrentTool('checkbox')}
             onGeneratePdf={handleGeneratePdf}
             onAddPencilTool={() => setCurrentTool('pencil')}
+            onAddPenTool={() => setCurrentTool('pen')}
           />
           <ToggleButtonGroup
             value={mode}
