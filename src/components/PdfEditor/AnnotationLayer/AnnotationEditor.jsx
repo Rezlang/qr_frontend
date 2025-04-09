@@ -178,7 +178,7 @@ const AnnotationEditor = ({
           // Use controlled positioning to ensure exact coordinates are used
           position={{ x: ann.x, y: ann.y }}
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
-          disabled={mode === 'sign'}
+          disabled={mode === 'sign' || (ann.type === 'spline' && !ann.complete)}
         >
           <Box
             sx={{
