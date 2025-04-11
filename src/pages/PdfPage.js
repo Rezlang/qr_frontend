@@ -1,12 +1,16 @@
 import PdfEditor from "../components/PdfEditor/PdfEditor";
 import React from 'react';
 import QRSHeader from "../components/Header/QRSHeader";
-const PdfPage = () => {
+import AppTheme from "../components/signin/theme/AppTheme";
+
+const PdfPage = (props) => {
   return (
-    <div>
-      <QRSHeader />
-      <PdfEditor></PdfEditor>
-    </div>
+    <AppTheme {...props}>
+      <div>
+        <QRSHeader />
+        <PdfEditor></PdfEditor>
+      </div>
+    </AppTheme>
   );
 };
 

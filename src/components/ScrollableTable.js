@@ -26,15 +26,7 @@ const ScrollableTable = ({ data }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {data.map((row, rowIndex) => (
-            <TableRow key={rowIndex} hover>
-              {columns.map((col) => (
-                <TableCell key={col}>
-                  {row[col]}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {}
         </TableBody>
       </Table>
     </TableContainer>

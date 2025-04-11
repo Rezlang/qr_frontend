@@ -1,7 +1,6 @@
 // src/components/UrlShortener.js
 import React, { useState } from 'react';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
+import { TextField, Button, Card } from '@mui/material';
 import { DefaultCopyField } from '@eisberg-labs/mui-copy-field';
 import { getAuth } from 'firebase/auth';
 import { shortenUrl } from '../../services/api';
@@ -71,7 +70,7 @@ const UrlShortener = () => {
   };
 
   return (
-    <div className="short-link">
+    <Card className="short-link">
       <h1>Shorten URL</h1>
       <div className="input-line">
         <TextField
@@ -114,7 +113,7 @@ const UrlShortener = () => {
         label="Copy Short URL"
         value={shortenedUrl}
       />
-    </div>
+    </Card>
   );
 };
 
