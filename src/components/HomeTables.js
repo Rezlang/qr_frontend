@@ -1,27 +1,64 @@
 import React from 'react';
 import ScrollableTable from './ScrollableTable';
 import { auth } from '../App';
-import { fetchUserUrls } from '../services/api';
+import { fetchUserUrls, fetchAccessDates } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function HomeTables() {
-    const [loading, setLoading] = React.useState(true);
-    const [urlData, setUrlData] = React.useState([]);
+    const [urlTableData, setUrlTableData] = React.useState([]);
+    const [groupTableData, setGroupTableData] = React.useState([]);
+    const [docTableData, setDocTableData] = React.useState([]);
+
+    const urlColumns = ["ShortUrl", "Clicks", "Last Accessed"]
+
+    async function fillTables(urlList) {
+        let urlData = []
+        let groupData = []
+        urlData.push(urlColumns)
+        groupData.push(urlColumns.slice(1, urlColumns.length))
+        // unpack groups
+        let groups = urlList.groups
+            for (let key in groups) {
+                const group = groups[key]
+                let groupClicks = 0
+                
+                // For each group of URLS
+
+                for (let idx in group) {
+                    const url = group[idx]
+                    const accessData = Object.values(await fetchAccessDates(url));
+
+                    let clicks = 0
+                    if (accessData.length !== 0) {
+                        for (let date in accessData) {
+                            clicks += Number(Object.values(accessData[date]))
+                        }
+                    }
+                    groupClicks += clicks
+
+                    const sortedDates = Object.keys(accessData).sort();
+                    urlData.push([url, clicks, sortedDates[0]])
+                }
+                groupData.push([group, groupClicks]);
+        }
+
+        setUrlTableData(urlData);
+        setGroupTableData(groupData);
+    }
+    
     React.useEffect(() => {
      const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
           if (userCredential) {
             try {
             const urls = await fetchUserUrls(userCredential.uid);
-            console.log("Success, got something.");
-            console.log(urls);
-            setUrlData(urls);
-            
-    
-            
+
+            if (urlTableData.length === 0 || groupTableData.length === 0) {
+                await fillTables(urls);
+            }
+
         } catch (err) {
             console.log('Failed to fetch user URLs:', err.message);
         }
-        setLoading(false);
         }
         });
     
@@ -30,13 +67,13 @@ export default function HomeTables() {
 
 
 
-    return !loading ? (
+    return (
         <div>
         <h2>Your Shortlinks:</h2>
-        <ScrollableTable data={urlData} />
-        <h2>Your Documents:</h2>
-        <ScrollableTable data={urlData} />
+        <ScrollableTable data={urlTableData} />
+        <h2>Your Groups:</h2>
+        <ScrollableTable data={groupTableData} />
         </div>
-    ) : (<p>Loading...</p>);
+    );
 
 };

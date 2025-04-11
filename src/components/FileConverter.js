@@ -74,7 +74,7 @@ const FileConverter = () => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       // Get the type of the file
-      const fileType = file.name.split('.')[1];
+      const fileType = file.name.split('.')[1].toLowerCase();
       if (fileType in ffmpegMap) {
         setUploadError(null);
         setInputType(fileType);
