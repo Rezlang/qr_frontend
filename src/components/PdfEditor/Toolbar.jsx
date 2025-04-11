@@ -18,6 +18,8 @@ const Toolbar = ({
   onGeneratePdf,
   onAddPencilTool,
   onAddPenTool,
+  onAddHighlighterTool,
+
 }) => {
   return (
     <Card sx={{ ml: 2, width: 200, mt: 6.5, mb: 6.5 }}>
@@ -76,6 +78,11 @@ const Toolbar = ({
         <ListItem disablePadding>
           <ListItemButton onClick={onAddPenTool} sx={{ justifyContent: 'center' }}>
             <ListItemText primary="Pen" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton onClick={onAddHighlighterTool} sx={{ justifyContent: 'center' }}>
+            <ListItemText primary="Highlighter" />
           </ListItemButton>
         </ListItem>
         <Divider />

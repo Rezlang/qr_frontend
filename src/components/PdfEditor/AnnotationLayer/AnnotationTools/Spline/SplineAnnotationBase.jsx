@@ -100,6 +100,7 @@ const SplineAnnotationBase = ({
             points={splinePoints.map(p => `${p.x},${p.y}`).join(' ')}
             stroke={annotation.strokeColor || 'black'}
             strokeWidth={annotation.strokeWidth || 2}
+            strokeOpacity={annotation.opacity ?? 1}
             fill="none"
           />
         )}

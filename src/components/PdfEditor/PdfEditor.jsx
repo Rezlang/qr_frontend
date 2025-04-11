@@ -224,6 +224,7 @@ const PdfEditor = () => {
             onGeneratePdf={handleGeneratePdf}
             onAddPencilTool={() => setCurrentTool('pencil')}
             onAddPenTool={() => setCurrentTool('pen')}
+            onAddHighlighterTool={() => setCurrentTool('highlighter')}
           />
           <ToggleButtonGroup
             value={mode}
