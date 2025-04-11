@@ -18,15 +18,15 @@ const ScrollableTable = ({ data }) => {
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            {columns.map((col) => (
+            {/* {columns.map((col) => (
               <TableCell key={col} style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
                 {col}
               </TableCell>
-            ))}
+            ))} */}
           </TableRow>
         </TableHead>
         <TableBody>
-          {data.map((row, rowIndex) => (
+          {/* {content.map((row, rowIndex) => (
             <TableRow key={rowIndex} hover>
               {columns.map((col) => (
                 <TableCell key={col}>
@@ -34,7 +34,7 @@ const ScrollableTable = ({ data }) => {
                 </TableCell>
               ))}
             </TableRow>
-          ))}
+          ))} */}
         </TableBody>
       </Table>
     </TableContainer>
