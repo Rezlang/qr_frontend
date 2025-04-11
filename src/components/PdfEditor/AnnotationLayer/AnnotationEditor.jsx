@@ -5,12 +5,8 @@ import TextAnnotation from './AnnotationTools/TextAnnotation.jsx';
 import CheckboxAnnotation from './AnnotationTools/CheckboxAnnotation';
 import SignatureAnnotation from './AnnotationTools/SignatureAnnotation';
 import ImageAnnotation from './AnnotationTools/ImageAnnotation';
-import PencilTool from './AnnotationTools/Spline/PencilTool';
-import PenTool from './AnnotationTools/Spline/PenTool';
-import HighlighterTool from './AnnotationTools/Spline/HighlighterTool';
 
-
-// Modified createAnnotation to support both pencil and pen tools.
+// Modified createAnnotation to exclude spline tools.
 export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   let x, y, width, height;
   if (tool === 'checkbox') {
@@ -47,29 +43,7 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
       return { ...baseAnnotation, type: 'signature', file: null, url: null };
     case 'checkbox':
       return { ...baseAnnotation, type: 'checkbox', checked: false };
-    case 'pencil':
-    case 'pen':
-      // For both pencil and pen tools, create a spline annotation.
-      return {
-        ...baseAnnotation,
-        type: 'spline',
-        tool: tool,
-        points: [],
-        strokeColor: '#000000',
-        strokeWidth: 2,
-        complete: false,
-      };
-    case 'highlighter':
-      return {
-        ...baseAnnotation,
-        type: 'spline',
-        tool: 'highlighter',
-        points: [],
-        strokeColor: '#ffff00',
-        strokeWidth: 8,
-        complete: false,
-      };
-      
+    // The spline tool cases have been removed.
     default:
       return null;
   }
@@ -115,7 +89,6 @@ const AnnotationEditor = ({
   onImageClick,
   currentTool,
   onCreateAnnotation,
-  updateSplineAnnotation,
   pdfDimensions,
   mode,
 }) => {
@@ -194,7 +167,7 @@ const AnnotationEditor = ({
           // Use controlled positioning to ensure exact coordinates are used.
           position={{ x: ann.x, y: ann.y }}
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
-          disabled={mode === 'sign' || (ann.type === 'spline' && !ann.complete)}
+          disabled={mode === 'sign'}
         >
           <Box
             sx={{
@@ -249,16 +222,6 @@ const AnnotationEditor = ({
               <ClickableAnnotationWrapper onClick={() => onImageClick(ann)}>
                 <ImageAnnotation ann={ann} />
               </ClickableAnnotationWrapper>
-            )}
-            {ann.type === 'spline' && (
-              // Render the appropriate spline tool based on its "tool" property.
-              ann.tool === 'pen' ? (
-                <PenTool annotation={ann} updateAnnotation={updateSplineAnnotation} />
-              ) : ann.tool === 'highlighter' ? (
-                <HighlighterTool annotation={ann} updateAnnotation={updateSplineAnnotation} />
-              ) : (
-                <PencilTool annotation={ann} updateAnnotation={updateSplineAnnotation} />
-              )
             )}
           </Box>
         </Draggable>
