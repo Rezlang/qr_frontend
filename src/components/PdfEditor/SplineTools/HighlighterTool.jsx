@@ -1,8 +1,7 @@
-// HighlighterTool.jsx
 import React, { useState, useRef } from 'react';
 import SplineDrawingBase from './SplineDrawingBase';
 
-const HighlighterTool = ({ id, initialSpline, onUpdate, onSelect }) => {
+const HighlighterTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
   const [spline, setSpline] = useState(
     initialSpline || {
       id,
@@ -49,7 +48,6 @@ const HighlighterTool = ({ id, initialSpline, onUpdate, onSelect }) => {
     if (!isDrawing || spline.complete) return;
     e.stopPropagation();
     setIsDrawing(false);
-    // Finalize only if a valid line has been drawn.
     if (spline.points.length === 2) {
       const newSpline = { ...spline, complete: true };
       setSpline(newSpline);
@@ -76,6 +74,7 @@ const HighlighterTool = ({ id, initialSpline, onUpdate, onSelect }) => {
       }}
       drawingHandlers={drawingHandlers}
       onSelect={onSelect}
+      onDeleteSpline={() => onDelete && onDelete(spline.id)}
     />
   );
 };

@@ -1,8 +1,7 @@
-// PencilTool.jsx
 import React, { useState } from 'react';
 import SplineDrawingBase from './SplineDrawingBase';
 
-const PencilTool = ({ id, initialSpline, onUpdate, onSelect }) => {
+const PencilTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
   const [spline, setSpline] = useState(
     initialSpline || {
       id,
@@ -69,6 +68,7 @@ const PencilTool = ({ id, initialSpline, onUpdate, onSelect }) => {
       }}
       drawingHandlers={drawingHandlers}
       onSelect={onSelect}
+      onDeleteSpline={() => onDelete && onDelete(spline.id)}
     />
   );
 };

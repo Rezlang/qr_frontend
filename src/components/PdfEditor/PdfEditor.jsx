@@ -8,29 +8,38 @@ import Toolbar from './Toolbar';
 import SignatureModal from './SignatureModal/SignatureModal';
 import AnnotationSaver from './AnnotationLayer/AnnotationSaver';
 
-// Import the free-floating spline tool components.
+// Import free‑floating spline tool components.
 import PencilTool from './SplineTools/PencilTool';
 import PenTool from './SplineTools/PenTool';
 import HighlighterTool from './SplineTools/HighlighterTool';
 
 const PdfEditor = () => {
-  // State for non-spline annotations.
+  // State for non‑spline annotations.
   const [annotations, setAnnotations] = useState([]);
-  // State for free-floating spline tools.
+  // State for free‑floating spline tools.
   const [splineTools, setSplineTools] = useState([]);
   const [basePdf, setBasePdf] = useState(null);
   const [basePdfUrl, setBasePdfUrl] = useState(null);
   const [pdfDimensions, setPdfDimensions] = useState({ width: 600, height: 800 });
   const [openSignatureModal, setOpenSignatureModal] = useState(false);
-  // For non-spline annotation tools (text, image, signature, checkbox).
+  // Global “current tool” state for all annotations (text, image, signature, checkbox, or free‑floating spline tools)
   const [currentTool, setCurrentTool] = useState(null);
+  // Keep track of the selected free‑floating spline.
+  const [activeSplineId, setActiveSplineId] = useState(null);
+
+  // For file‑handling annotations.
   const [pendingImageAnnotationId, setPendingImageAnnotationId] = useState(null);
   const [pendingSignatureAnnotationId, setPendingSignatureAnnotationId] = useState(null);
   const [mode, setMode] = useState('edit');
-  // Keep track of the selected free-floating spline.
-  const [activeSplineId, setActiveSplineId] = useState(null);
 
+  // A ref for the hidden image input.
   const imageInputRef = useRef(null);
+
+  // Utility: When selecting a spline tool (or any annotation tool), clear active free‑floating spline.
+  const selectTool = (tool) => {
+    setCurrentTool(tool);
+    setActiveSplineId(null);
+  };
 
   const handleUploadBasePdf = async (e) => {
     const file = e.target.files[0];
@@ -45,13 +54,13 @@ const PdfEditor = () => {
     }
   };
 
-  // When generating the PDF, combine both non-spline annotations and spline tools.
+  // When generating the PDF, combine all annotations.
   const handleGeneratePdf = async () => {
     const allAnnotations = [...annotations, ...splineTools];
     await generatePdf({ basePdf, annotations: allAnnotations, pdfDimensions });
   };
 
-  // Callbacks for non-spline annotations.
+  // Callbacks for non‑spline annotations.
   const handleAddAnnotation = (annotation) => {
     setAnnotations((prev) => [...prev, annotation]);
   };
@@ -78,10 +87,10 @@ const PdfEditor = () => {
     );
   };
 
+  // When deleting an annotation, also remove any free‑floating spline with that id.
   const handleDeleteAnnotation = (id) => {
     if (mode === 'edit') {
       setAnnotations((prev) => prev.filter((ann) => ann.id !== id));
-      // Also remove a free-floating spline if it is deleted.
       setSplineTools((prev) => prev.filter((spline) => spline.id !== id));
       if (activeSplineId === id) setActiveSplineId(null);
     }
@@ -89,15 +98,17 @@ const PdfEditor = () => {
 
   // --- Spline Tools State Management ---
 
-  // When a free-floating spline is updated, update it in the state.
+  // When a free‑floating spline is updated, update it in state.
   const updateSplineTool = (updatedSpline) => {
     setSplineTools((prev) =>
       prev.map((s) => (s.id === updatedSpline.id ? updatedSpline : s))
     );
   };
 
-  // Creation handlers for new spline tools.
+  // Creation handlers for free‑floating spline tools.
+  // Note: Calling selectTool ensures that the current tool is updated and any active selection is cleared.
   const handleAddPencilTool = () => {
+    selectTool('pencil');
     const newSpline = {
       id: Date.now(),
       tool: 'pencil',
@@ -112,6 +123,7 @@ const PdfEditor = () => {
   };
 
   const handleAddPenTool = () => {
+    selectTool('pen');
     const newSpline = {
       id: Date.now(),
       tool: 'pen',
@@ -126,6 +138,7 @@ const PdfEditor = () => {
   };
 
   const handleAddHighlighterTool = () => {
+    selectTool('highlighter');
     const newSpline = {
       id: Date.now(),
       tool: 'highlighter',
@@ -139,7 +152,7 @@ const PdfEditor = () => {
     setActiveSplineId(newSpline.id);
   };
 
-  // --- File-handling for image and signature annotations (non-spline) ---
+  // --- File‑handling for image and signature annotations (non‑spline) ---
 
   const handleImageFileChange = (e) => {
     const file = e.target.files[0];
@@ -212,8 +225,17 @@ const PdfEditor = () => {
     setOpenSignatureModal(false);
   };
 
-  // Get the currently active spline (if any).
+  // Get the currently active free‑floating spline.
   const activeSpline = splineTools.find((s) => s.id === activeSplineId);
+
+  // Handler for clicks on the PDF canvas background.
+  // (Clicking anywhere on the background deselects any active spline.)
+  const handleCanvasBackgroundClick = (e) => {
+    // If the click target is exactly the container (not an annotation or PDF element), then clear active spline.
+    if (e.target === e.currentTarget) {
+      setActiveSplineId(null);
+    }
+  };
 
   return (
     <Box
@@ -228,8 +250,8 @@ const PdfEditor = () => {
         <Box
           sx={{
             position: 'relative',
-            flexDirection: 'column',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
           }}
         >
@@ -237,6 +259,7 @@ const PdfEditor = () => {
             PDF Editor
           </Typography>
           <Box
+            onClick={handleCanvasBackgroundClick}
             sx={{
               position: 'relative',
               width: pdfDimensions.width,
@@ -246,9 +269,12 @@ const PdfEditor = () => {
               overflow: 'hidden',
             }}
           >
-            <PdfDocumentViewer basePdfUrl={basePdfUrl} pdfDimensions={pdfDimensions} />
+            <PdfDocumentViewer
+              basePdfUrl={basePdfUrl}
+              pdfDimensions={pdfDimensions}
+            />
 
-            {/* Render non-spline annotations */}
+            {/* Non‑spline annotations */}
             <AnnotationLayer
               annotations={annotations}
               updateAnnotationPosition={updateAnnotationPosition}
@@ -263,46 +289,33 @@ const PdfEditor = () => {
               mode={mode}
             />
 
-            {/* Render free-floating spline tools */}
+            {/* Free‑floating spline tools */}
             {splineTools.map((spline) => {
+              const commonProps = {
+                key: spline.id,
+                id: spline.id,
+                initialSpline: spline,
+                onUpdate: updateSplineTool,
+                onSelect: (id) => setActiveSplineId(id),
+                onDelete: () => handleDeleteAnnotation(spline.id),
+              };
               switch (spline.tool) {
                 case 'pencil':
-                  return (
-                    <PencilTool
-                      key={spline.id}
-                      id={spline.id}
-                      initialSpline={spline}
-                      onUpdate={updateSplineTool}
-                      onSelect={(id) => setActiveSplineId(id)}
-                    />
-                  );
+                  return <PencilTool {...commonProps} />;
                 case 'pen':
-                  return (
-                    <PenTool
-                      key={spline.id}
-                      id={spline.id}
-                      initialSpline={spline}
-                      onUpdate={updateSplineTool}
-                      onSelect={(id) => setActiveSplineId(id)}
-                    />
-                  );
+                  return <PenTool {...commonProps} />;
                 case 'highlighter':
-                  return (
-                    <HighlighterTool
-                      key={spline.id}
-                      id={spline.id}
-                      initialSpline={spline}
-                      onUpdate={updateSplineTool}
-                      onSelect={(id) => setActiveSplineId(id)}
-                    />
-                  );
+                  return <HighlighterTool {...commonProps} />;
                 default:
                   return null;
               }
             })}
           </Box>
 
-          <AnnotationSaver annotations={annotations} setAnnotations={setAnnotations} />
+          <AnnotationSaver
+            annotations={annotations}
+            setAnnotations={setAnnotations}
+          />
 
           <input
             type="file"
@@ -315,20 +328,25 @@ const PdfEditor = () => {
         <Box sx={{ ml: 2 }}>
           <Toolbar
             onUploadBasePdf={handleUploadBasePdf}
-            onAddTextBox={() => setCurrentTool('text')}
-            onAddImageTool={() => setCurrentTool('image')}
-            onAddSignatureTool={() => setCurrentTool('signature')}
-            onAddCheckboxTool={() => setCurrentTool('checkbox')}
-            onGeneratePdf={handleGeneratePdf}
+            // These callbacks set the current tool and create the appropriate annotation mode.
+            onAddTextBox={() => selectTool('text')}
+            onAddImageTool={() => selectTool('image')}
+            onAddSignatureTool={() => selectTool('signature')}
+            onAddCheckboxTool={() => selectTool('checkbox')}
+            // For spline annotations, call the corresponding add function.
             onAddPencilTool={handleAddPencilTool}
             onAddPenTool={handleAddPenTool}
             onAddHighlighterTool={handleAddHighlighterTool}
-            // Pass active spline info so the toolbar can display modifier controls
+            onGeneratePdf={handleGeneratePdf}
+            // Pass active spline info so the toolbar can display controls for it.
             activeSpline={activeSpline}
             updateActiveSpline={(updated) => {
               updateSplineTool(updated);
               setActiveSplineId(updated.id);
             }}
+            // Pass currentTool so the toolbar highlights the active tool.
+            currentTool={currentTool}
+            setCurrentTool={setCurrentTool}
           />
           <ToggleButtonGroup
             value={mode}

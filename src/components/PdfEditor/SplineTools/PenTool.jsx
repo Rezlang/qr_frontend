@@ -1,8 +1,7 @@
-// PenTool.jsx
 import React, { useState } from 'react';
 import SplineDrawingBase from './SplineDrawingBase';
 
-const PenTool = ({ id, initialSpline, onUpdate, onSelect }) => {
+const PenTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
   const [spline, setSpline] = useState(
     initialSpline || {
       id,
@@ -26,7 +25,7 @@ const PenTool = ({ id, initialSpline, onUpdate, onSelect }) => {
     onUpdate && onUpdate(newSpline);
   };
 
-  // Optionally, mark the spline as complete on double click.
+  // On double click, mark the spline as complete
   const handleDoubleClick = (e) => {
     e.stopPropagation();
     if (!spline.complete && spline.points.length > 1) {
@@ -53,6 +52,7 @@ const PenTool = ({ id, initialSpline, onUpdate, onSelect }) => {
       }}
       drawingHandlers={drawingHandlers}
       onSelect={onSelect}
+      onDeleteSpline={() => onDelete && onDelete(spline.id)}
     />
   );
 };
