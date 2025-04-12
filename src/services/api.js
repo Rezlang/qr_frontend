@@ -105,3 +105,18 @@ export const fetchUserUrls = async (uid) => {
   }
   return response.json();
 };
+
+export const fetchCreationDate = async (shortenedUrl) => {
+  const response = await fetch(`http://${APIURL}/analytics/${shortenedUrl}/created-on`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch creation date');
+    }
+
+    return response.json();
+}
