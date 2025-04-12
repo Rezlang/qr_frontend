@@ -5,9 +5,10 @@ import { fetchUserUrls, fetchAccessDates } from '../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function HomeTables() {
-    const [urlTableData, setUrlTableData] = React.useState([]);
-    const [groupTableData, setGroupTableData] = React.useState([]);
-    const [docTableData, setDocTableData] = React.useState([]);
+    const [urlTableData, setUrlTableData] = React.useState(null);
+    const [groupTableData, setGroupTableData] = React.useState(null);
+    const [userUrls, setUserUrls] = React.useState(null);
+    const [docTableData, setDocTableData] = React.useState(null);
 
     const urlColumns = ["ShortUrl", "Clicks", "Last Accessed"]
 
@@ -50,10 +51,13 @@ export default function HomeTables() {
      const unsubscribe = onAuthStateChanged(auth, async (userCredential) => {
           if (userCredential) {
             try {
-            const urls = await fetchUserUrls(userCredential.uid);
+            if (userUrls === null) {
+                const urls = await fetchUserUrls(userCredential.uid);
+                setUserUrls(urls);
+            }
 
-            if (urlTableData.length === 0 || groupTableData.length === 0) {
-                await fillTables(urls);
+            if (urlTableData === null || groupTableData === null) {
+                await fillTables(userUrls);
             }
 
         } catch (err) {
