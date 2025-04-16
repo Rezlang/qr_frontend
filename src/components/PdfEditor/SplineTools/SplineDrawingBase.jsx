@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const SplineDrawingBase = ({
   spline,
-  previewPoint,              // ← now used below
+  previewPoint,
+  toolType,                // ← pull in toolType
   updateSpline,
   drawingHandlers,
   extraToolbarElements,
@@ -64,6 +65,7 @@ const SplineDrawingBase = ({
     const pts = previewPoint && !spline.complete
       ? [...spline.points, previewPoint]
       : spline.points;
+
     if (pts.length < 2) return '';
     const smooth = interpolate(pts);
     return smooth
@@ -76,6 +78,9 @@ const SplineDrawingBase = ({
     spline.complete && spline.points.length > 0
       ? interpolate(spline.points)
       : spline.points;
+
+  // Hide the straight polyline while actively drawing with the pen
+  const showActualStrokes = spline.complete || toolType !== 'pen';
 
   const handleSplineClick = (e) => {
     e.stopPropagation();
@@ -101,7 +106,7 @@ const SplineDrawingBase = ({
       {/* ——— Preview while drawing ——— */}
       {!spline.complete && previewPoint && (
         <>
-          {/* Preview rubber‑band spline */}
+          {/* Only interpolated curve */}
           <path
             d={getPathData()}
             fill="none"
@@ -110,7 +115,7 @@ const SplineDrawingBase = ({
             strokeOpacity={spline.opacity ?? 1}
             pointerEvents="none"
           />
-          {/* Preview point at cursor */}
+          {/* Preview point */}
           <circle
             cx={previewPoint.x}
             cy={previewPoint.y}
@@ -123,7 +128,7 @@ const SplineDrawingBase = ({
       )}
 
       {/* ——— Actual spline strokes ——— */}
-      {splinePoints.length > 0 && (
+      {showActualStrokes && splinePoints.length > 0 && (
         <>  
           {/* invisible thick line for easier clicks */}
           <polyline

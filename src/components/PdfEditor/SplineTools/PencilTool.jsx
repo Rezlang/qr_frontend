@@ -1,24 +1,19 @@
-// PencilTool.js
+// PencilTool.jsx
 import React, { useState } from 'react';
 import SplineDrawingBase from './SplineDrawingBase';
 
-// Minimum pixel distance for final editing points
 const POINT_DISTANCE_THRESHOLD = 30;
-
-// Utility to downsample points by threshold
 const filterPoints = (points, threshold) => {
   if (points.length === 0) return [];
-  const filtered = [points[0]];
+  const out = [points[0]];
   for (let i = 1; i < points.length; i++) {
-    const last = filtered[filtered.length - 1];
+    const last = out[out.length - 1];
     const pt = points[i];
-    const dx = pt.x - last.x;
-    const dy = pt.y - last.y;
-    if (Math.hypot(dx, dy) >= threshold) {
-      filtered.push(pt);
+    if (Math.hypot(pt.x - last.x, pt.y - last.y) >= threshold) {
+      out.push(pt);
     }
   }
-  return filtered;
+  return out;
 };
 
 const PencilTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
@@ -38,38 +33,31 @@ const PencilTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
     if (spline.complete) return;
     e.stopPropagation();
     setIsDrawing(true);
-    const svgRect = e.currentTarget.getBoundingClientRect();
-    const start = { x: e.clientX - svgRect.left, y: e.clientY - svgRect.top };
-    const newSpline = { ...spline, points: [start] };
-    setSpline(newSpline);
-    onUpdate && onUpdate(newSpline);
+    const { left, top } = e.currentTarget.getBoundingClientRect();
+    const start = { x: e.clientX - left, y: e.clientY - top };
+    const next = { ...spline, points: [start] };
+    setSpline(next);
+    onUpdate?.(next);
   };
 
   const handleMouseMove = e => {
     if (!isDrawing || spline.complete) return;
     e.stopPropagation();
-    const svgRect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - svgRect.left;
-    const y = e.clientY - svgRect.top;
-
-    // Always add points during drawing for high-res feedback
-    const newPoints = [...spline.points, { x, y }];
-    const newSpline = { ...spline, points: newPoints };
-    setSpline(newSpline);
-    onUpdate && onUpdate(newSpline);
+    const { left, top } = e.currentTarget.getBoundingClientRect();
+    const pt = { x: e.clientX - left, y: e.clientY - top };
+    const next = { ...spline, points: [...spline.points, pt] };
+    setSpline(next);
+    onUpdate?.(next);
   };
 
-  const handleMouseUp = e => {
+  const finishDrawing = () => {
     if (!isDrawing || spline.complete) return;
-    e.stopPropagation();
     setIsDrawing(false);
-
     if (spline.points.length > 1) {
-      // Downsample final points
       const filtered = filterPoints(spline.points, POINT_DISTANCE_THRESHOLD);
-      const finished = { ...spline, points: filtered, complete: true };
-      setSpline(finished);
-      onUpdate && onUpdate(finished);
+      const done = { ...spline, points: filtered, complete: true };
+      setSpline(done);
+      onUpdate?.(done);
     }
   };
 
@@ -77,8 +65,8 @@ const PencilTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
     ? {
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
-        onMouseUp: handleMouseUp,
-        onMouseLeave: handleMouseUp,
+        onMouseUp: finishDrawing,
+        onMouseLeave: finishDrawing,
         cursor: isDrawing ? 'crosshair' : 'default',
       }
     : {};
@@ -86,13 +74,15 @@ const PencilTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
   return (
     <SplineDrawingBase
       spline={spline}
-      updateSpline={updated => {
-        setSpline(updated);
-        onUpdate && onUpdate(updated);
+      previewPoint={null}
+      toolType="pencil"
+      updateSpline={u => {
+        setSpline(u);
+        onUpdate?.(u);
       }}
       drawingHandlers={drawingHandlers}
       onSelectSpline={onSelect}
-      onDeleteSpline={() => onDelete && onDelete(spline.id)}
+      onDeleteSpline={() => onDelete?.(spline.id)}
     />
   );
 };

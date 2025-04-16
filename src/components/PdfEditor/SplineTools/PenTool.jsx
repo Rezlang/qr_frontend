@@ -13,43 +13,39 @@ const PenTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
       opacity: 1,
     }
   );
-  // previewPoint holds the current mouse-over location
   const [previewPoint, setPreviewPoint] = useState(null);
 
-  const handleClick = (e) => {
+  const handleClick = e => {
     if (spline.complete) return;
+    // ignore click events beyond the first (so the 2nd click of a dbl-click doesn’t add a point)
+    if (e.detail > 1) return;
+
     e.stopPropagation();
     const { left, top } = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - left;
     const y = e.clientY - top;
-    const newPoints = [...spline.points, { x, y }];
-    const newSpline = { ...spline, points: newPoints };
-    setSpline(newSpline);
-    onUpdate?.(newSpline);
+    const next = { ...spline, points: [...spline.points, { x, y }] };
+    setSpline(next);
+    onUpdate?.(next);
   };
 
-  const handleDoubleClick = (e) => {
-    e.stopPropagation();
+  const handleDoubleClick = e => {
     if (!spline.complete && spline.points.length > 1) {
-      const finished = { ...spline, complete: true };
-      setSpline(finished);
-      onUpdate?.(finished);
+      e.stopPropagation();
+      const done = { ...spline, complete: true };
+      setSpline(done);
+      onUpdate?.(done);
       setPreviewPoint(null);
     }
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = e => {
     if (spline.complete) return;
     const { left, top } = e.currentTarget.getBoundingClientRect();
-    setPreviewPoint({
-      x: e.clientX - left,
-      y: e.clientY - top,
-    });
+    setPreviewPoint({ x: e.clientX - left, y: e.clientY - top });
   };
 
-  const handleMouseLeave = () => {
-    setPreviewPoint(null);
-  };
+  const handleMouseLeave = () => setPreviewPoint(null);
 
   const drawingHandlers = !spline.complete
     ? {
@@ -65,7 +61,8 @@ const PenTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
     <SplineDrawingBase
       spline={spline}
       previewPoint={previewPoint}
-      updateSpline={(u) => {
+      toolType="pen"
+      updateSpline={u => {
         setSpline(u);
         onUpdate?.(u);
       }}
