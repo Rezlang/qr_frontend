@@ -6,6 +6,9 @@ import CheckboxAnnotation from './AnnotationTools/CheckboxAnnotation';
 import SignatureAnnotation from './AnnotationTools/SignatureAnnotation';
 import ImageAnnotation from './AnnotationTools/ImageAnnotation';
 
+// Only annotation tools should trigger the selection box
+const ANNOTATION_TOOLS = ['text', 'image', 'signature', 'checkbox'];
+
 // Modified createAnnotation to exclude spline tools.
 export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
   let x, y, width, height;
@@ -43,7 +46,6 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
       return { ...baseAnnotation, type: 'signature', file: null, url: null };
     case 'checkbox':
       return { ...baseAnnotation, type: 'checkbox', checked: false };
-    // The spline tool cases have been removed.
     default:
       return null;
   }
@@ -53,11 +55,11 @@ export const createAnnotation = (tool, startX, startY, currentX, currentY) => {
 const ClickableAnnotationWrapper = ({ children, onClick }) => {
   const [mouseDownPos, setMouseDownPos] = useState(null);
 
-  const handleMouseDown = (e) => {
+  const handleMouseDownWrapper = (e) => {
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUpWrapper = (e) => {
     if (mouseDownPos) {
       const dx = Math.abs(e.clientX - mouseDownPos.x);
       const dy = Math.abs(e.clientY - mouseDownPos.y);
@@ -71,8 +73,8 @@ const ClickableAnnotationWrapper = ({ children, onClick }) => {
   return (
     <div
       style={{ width: '100%', height: '100%' }}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
+      onMouseDown={handleMouseDownWrapper}
+      onMouseUp={handleMouseUpWrapper}
     >
       {children}
     </div>
@@ -97,7 +99,8 @@ const AnnotationEditor = ({
   const handleMouseDown = (e) => {
     // Only start annotation creation if the click is directly on the container.
     if (e.target !== e.currentTarget) return;
-    if (!currentTool || mode === 'sign') return;
+    // Only handle true annotation tools (exclude spline tools)
+    if (!ANNOTATION_TOOLS.includes(currentTool) || mode === 'sign') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
@@ -164,7 +167,6 @@ const AnnotationEditor = ({
       {annotations.map((ann) => (
         <Draggable
           key={ann.id}
-          // Use controlled positioning to ensure exact coordinates are used.
           position={{ x: ann.x, y: ann.y }}
           onStop={(e, data) => updateAnnotationPosition(ann.id, data.x, data.y)}
           disabled={mode === 'sign'}

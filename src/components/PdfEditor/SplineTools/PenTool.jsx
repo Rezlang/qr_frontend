@@ -1,3 +1,4 @@
+// PenTool.jsx
 import React, { useState } from 'react';
 import SplineDrawingBase from './SplineDrawingBase';
 
@@ -12,47 +13,65 @@ const PenTool = ({ id, initialSpline, onUpdate, onSelect, onDelete }) => {
       opacity: 1,
     }
   );
+  // previewPoint holds the current mouse-over location
+  const [previewPoint, setPreviewPoint] = useState(null);
 
   const handleClick = (e) => {
     if (spline.complete) return;
     e.stopPropagation();
-    const svgRect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - svgRect.left;
-    const y = e.clientY - svgRect.top;
+    const { left, top } = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - left;
+    const y = e.clientY - top;
     const newPoints = [...spline.points, { x, y }];
     const newSpline = { ...spline, points: newPoints };
     setSpline(newSpline);
-    onUpdate && onUpdate(newSpline);
+    onUpdate?.(newSpline);
   };
 
-  // On double click, mark the spline as complete
   const handleDoubleClick = (e) => {
     e.stopPropagation();
     if (!spline.complete && spline.points.length > 1) {
-      const newSpline = { ...spline, complete: true };
-      setSpline(newSpline);
-      onUpdate && onUpdate(newSpline);
+      const finished = { ...spline, complete: true };
+      setSpline(finished);
+      onUpdate?.(finished);
+      setPreviewPoint(null);
     }
+  };
+
+  const handleMouseMove = (e) => {
+    if (spline.complete) return;
+    const { left, top } = e.currentTarget.getBoundingClientRect();
+    setPreviewPoint({
+      x: e.clientX - left,
+      y: e.clientY - top,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setPreviewPoint(null);
   };
 
   const drawingHandlers = !spline.complete
     ? {
         onClick: handleClick,
         onDoubleClick: handleDoubleClick,
-        cursor: 'pointer',
+        onMouseMove: handleMouseMove,
+        onMouseLeave: handleMouseLeave,
+        cursor: 'crosshair',
       }
     : {};
 
   return (
     <SplineDrawingBase
       spline={spline}
-      updateSpline={(updated) => {
-        setSpline(updated);
-        onUpdate && onUpdate(updated);
+      previewPoint={previewPoint}
+      updateSpline={(u) => {
+        setSpline(u);
+        onUpdate?.(u);
       }}
       drawingHandlers={drawingHandlers}
-      onSelect={onSelect}
-      onDeleteSpline={() => onDelete && onDelete(spline.id)}
+      onSelectSpline={onSelect}
+      onDeleteSpline={() => onDelete?.(spline.id)}
     />
   );
 };

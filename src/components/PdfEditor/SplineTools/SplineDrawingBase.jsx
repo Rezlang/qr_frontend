@@ -1,17 +1,19 @@
+// SplineDrawingBase.jsx
 import React, { useState, useRef, useEffect } from 'react';
 
 const SplineDrawingBase = ({
-  spline,                // renamed from "annotation"
+  spline,
+  previewPoint,              // ← now used below
   updateSpline,
-  drawingHandlers,       // handlers passed from tool (if needed)
-  extraToolbarElements,  // any extra controls to display on the editor’s toolbar area
-  onSelectSpline,        // callback to inform parent when this spline is selected
-  onDeleteSpline         // NEW: callback to delete this spline
+  drawingHandlers,
+  extraToolbarElements,
+  onSelectSpline,
+  onDeleteSpline
 }) => {
   const [selected, setSelected] = useState(false);
   const svgRef = useRef(null);
 
-  // Listen for clicks outside to deselect, if needed.
+  // Deselect when clicking outside
   useEffect(() => {
     const handleDocumentClick = (e) => {
       if (svgRef.current && !svgRef.current.contains(e.target)) {
@@ -19,12 +21,12 @@ const SplineDrawingBase = ({
       }
     };
     document.addEventListener('click', handleDocumentClick);
-    return () => {
-      document.removeEventListener('click', handleDocumentClick);
-    };
+    return () => document.removeEventListener('click', handleDocumentClick);
   }, []);
 
-  // Catmull-Rom interpolation function.
+  const isDrawing = drawingHandlers && Object.keys(drawingHandlers).length > 0;
+
+  // Catmull‑Rom interpolation (unchanged)
   const interpolate = (points, numOfSegments = 16) => {
     const result = [];
     if (points.length < 2) return points;
@@ -57,18 +59,28 @@ const SplineDrawingBase = ({
     return result;
   };
 
+  // Build a path string that includes previewPoint when drawing
+  const getPathData = () => {
+    const pts = previewPoint && !spline.complete
+      ? [...spline.points, previewPoint]
+      : spline.points;
+    if (pts.length < 2) return '';
+    const smooth = interpolate(pts);
+    return smooth
+      .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+      .join(' ');
+  };
+
+  // For a finished spline, show only the interpolated backbone
   const splinePoints =
-    spline.complete && spline.points && spline.points.length > 0
+    spline.complete && spline.points.length > 0
       ? interpolate(spline.points)
       : spline.points;
 
-  // When the spline is clicked, mark it as selected and notify parent.
   const handleSplineClick = (e) => {
     e.stopPropagation();
     setSelected(true);
-    if (onSelectSpline) {
-      onSelectSpline(spline.id);
-    }
+    onSelectSpline && onSelectSpline(spline.id);
   };
 
   return (
@@ -80,76 +92,104 @@ const SplineDrawingBase = ({
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 9999,
-        pointerEvents: 'auto',
+        zIndex: 4,
+        pointerEvents: isDrawing ? 'all' : 'none',
         cursor: drawingHandlers?.cursor || 'default'
       }}
-      onClick={handleSplineClick}
       {...drawingHandlers}
     >
-      {/* Background rectangle to capture pointer events */}
-      <rect width="100%" height="100%" fill="transparent" />
-
-      {splinePoints && splinePoints.length > 0 && (
-        <polyline
-          points={splinePoints.map(p => `${p.x},${p.y}`).join(' ')}
-          stroke={spline.strokeColor || 'black'}
-          strokeWidth={spline.strokeWidth || 2}
-          strokeOpacity={spline.opacity ?? 1}
-          fill="none"
-        />
-      )}
-  
-      {selected && spline.complete && spline.points && (
+      {/* ——— Preview while drawing ——— */}
+      {!spline.complete && previewPoint && (
         <>
-          {/* Render edit circles for each point */}
-          {spline.points.map((p, i) => (
-            <circle
-              key={i}
-              cx={p.x}
-              cy={p.y}
-              r={4}
-              fill="blue"
-              fillOpacity="0.5"
-              style={{ cursor: 'move' }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                const circleElement = e.currentTarget;
-                const startDrag = (moveEvent) => {
-                  const ownerSVG = circleElement.ownerSVGElement;
-                  if (!ownerSVG) return;
-                  const svgRect = ownerSVG.getBoundingClientRect();
-                  const newX = moveEvent.clientX - svgRect.left;
-                  const newY = moveEvent.clientY - svgRect.top;
-                  const newPoints = spline.points.map((pt, idx) =>
-                    idx === i ? { x: newX, y: newY } : pt
-                  );
-                  updateSpline({ ...spline, points: newPoints });
-                };
-                const stopDrag = () => {
-                  document.removeEventListener('mousemove', startDrag);
-                  document.removeEventListener('mouseup', stopDrag);
-                };
-                document.addEventListener('mousemove', startDrag);
-                document.addEventListener('mouseup', stopDrag);
-              }}
-            />
-          ))}
-          {/* Render a delete “X” near the first point */}
-          {spline.points[0] && (
-            <text 
-              x={spline.points[0].x - 10} 
-              y={spline.points[0].y - 10}
-              style={{ cursor: 'pointer', fontSize: '16px', fill: 'red', userSelect: 'none' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteSpline && onDeleteSpline(spline.id);
-              }}
-            >
-              X
-            </text>
-          )}
+          {/* Preview rubber‑band spline */}
+          <path
+            d={getPathData()}
+            fill="none"
+            stroke={spline.strokeColor || 'black'}
+            strokeWidth={spline.strokeWidth || 2}
+            strokeOpacity={spline.opacity ?? 1}
+            pointerEvents="none"
+          />
+          {/* Preview point at cursor */}
+          <circle
+            cx={previewPoint.x}
+            cy={previewPoint.y}
+            r={4}
+            fill={spline.strokeColor || 'black'}
+            fillOpacity={0.5}
+            pointerEvents="none"
+          />
         </>
+      )}
+
+      {/* ——— Actual spline strokes ——— */}
+      {splinePoints.length > 0 && (
+        <>  
+          {/* invisible thick line for easier clicks */}
+          <polyline
+            points={splinePoints.map(p => `${p.x},${p.y}`).join(' ')}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={(spline.strokeWidth || 2) + 8}
+            pointerEvents="stroke"
+            onClick={handleSplineClick}
+          />
+          {/* visible line */}
+          <polyline
+            points={splinePoints.map(p => `${p.x},${p.y}`).join(' ')}
+            fill="none"
+            stroke={spline.strokeColor || 'black'}
+            strokeWidth={spline.strokeWidth || 2}
+            strokeOpacity={spline.opacity ?? 1}
+            pointerEvents="none"
+          />
+        </>
+      )}
+
+      {/* ——— Edit handles for a completed spline ——— */}
+      {selected && spline.complete && spline.points.map((p, i) => (
+        <circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={4}
+          fill="blue"
+          fillOpacity="0.5"
+          pointerEvents="all"
+          style={{ cursor: 'move' }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            const drag = (moveEvent) => {
+              const { left, top } = svgRef.current.getBoundingClientRect();
+              const newX = moveEvent.clientX - left;
+              const newY = moveEvent.clientY - top;
+              const pts = spline.points.map((pt, idx) =>
+                idx === i ? { x: newX, y: newY } : pt
+              );
+              updateSpline({ ...spline, points: pts });
+            };
+            const up = () => {
+              document.removeEventListener('mousemove', drag);
+              document.removeEventListener('mouseup', up);
+            };
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', up);
+          }}
+        />
+      ))}
+      {selected && spline.complete && spline.points[0] && (
+        <text
+          x={spline.points[0].x - 10}
+          y={spline.points[0].y - 10}
+          pointerEvents="all"
+          style={{ cursor: 'pointer', fontSize: '16px', fill: 'red', userSelect: 'none' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteSpline && onDeleteSpline(spline.id);
+          }}
+        >
+          X
+        </text>
       )}
     </svg>
   );
