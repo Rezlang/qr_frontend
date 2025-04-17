@@ -1,6 +1,6 @@
 import React from 'react';
 import QRSHeader from '../components/Header/QRSHeader';
-import FileConverter from '../components/FileConverter';
+import FileConverter from '../components/FileConverter/FileConverter';
 
 // filepath: /home/lucah/RPI/Spring-25/RCOS/qr_frontend/src/pages/ConverterPage.js
 

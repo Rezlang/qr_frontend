@@ -1,7 +1,7 @@
 import React from 'react';
 import ScrollableTable from './ScrollableTable';
-import { auth } from '../App';
-import { fetchUserUrls, fetchAccessDates } from '../services/api';
+import { auth } from '../../App';
+import { fetchUserUrls, fetchAccessDates } from '../../services/api';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function HomeTables() {
