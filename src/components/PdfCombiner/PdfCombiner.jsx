@@ -13,6 +13,8 @@ const PDFCombiner = () => {
     itemHeight,
     itemWidth,
     gap,
+    draggingId, 
+    handleDragStart,
     handleFileUpload,
     removeFile,
     toggleMode,
@@ -49,6 +51,8 @@ const PDFCombiner = () => {
         gap={gap}
         containerWidth={containerWidth}
         advancedMode={advancedMode}
+        draggingId={draggingId}
+        onStart={(e, data, id) => handleDragStart(e, data, id)}
         onDrag={handleDrag}
         onStop={handleStop}
       />
