@@ -1,5 +1,11 @@
 import React from "react";
-import { IconButton, List, ListItem, ListItemText, Box } from "@mui/material";
+import {
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+} from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Close";
 
 const FileList = ({ files, onRemove }) => (
@@ -11,14 +17,23 @@ const FileList = ({ files, onRemove }) => (
           p: 1,
           borderBottom: "1px solid",
           borderColor: "divider",
+          display: "flex",
+          alignItems: "center",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-          <ListItemText primary={entry.file?.name || "Unnamed file"} />
-          <IconButton onClick={() => onRemove(idx)} size="small">
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Box>
+        <Box
+          sx={{
+            width: 8,
+            height: "100%",
+            backgroundColor: entry.color,
+            borderRadius: 1,
+            mr: 1,
+          }}
+        />
+        <ListItemText primary={entry.file.name || "Unnamed file"} />
+        <IconButton onClick={() => onRemove(idx)} size="small">
+          <DeleteIcon fontSize="small" htmlColor="red" />
+        </IconButton>
       </ListItem>
     ))}
   </List>

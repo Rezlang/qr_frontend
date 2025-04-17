@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Button, Switch, Typography } from "@mui/material";
 import FileList from "./FileList";
 import Slider from "./Slider";
-import { usePDFProcessor } from "./miniPreview";
+import { usePDFProcessor } from "./usePDFProcessor";
 import FileDropZone from "../FileDropZone/FileDropZone";
 
 const PDFCombiner = () => {
@@ -13,11 +13,12 @@ const PDFCombiner = () => {
     itemHeight,
     itemWidth,
     gap,
-    draggingId, 
-    handleDragStart,
+    draggingId,
     handleFileUpload,
     removeFile,
+    removePage,
     toggleMode,
+    handleDragStart,
     handleDrag,
     handleStop,
     combinePDFs,
@@ -52,9 +53,11 @@ const PDFCombiner = () => {
         containerWidth={containerWidth}
         advancedMode={advancedMode}
         draggingId={draggingId}
-        onStart={(e, data, id) => handleDragStart(e, data, id)}
+        onStart={handleDragStart}
         onDrag={handleDrag}
         onStop={handleStop}
+        removeFile={removeFile}
+        removePage={removePage}
       />
 
       <Button variant="contained" onClick={combinePDFs}>
