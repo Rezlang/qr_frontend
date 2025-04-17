@@ -90,6 +90,7 @@ export default function FileConverter() {
       const data = await ffmpeg.readFile(outputFile);
       setResult(data);
     }
+    
     const selectTextConvert = (inputFile) => {
       switch (inputFile) {
         case 'docx':
@@ -107,6 +108,7 @@ export default function FileConverter() {
         console.error("Error converting file:", err);
       }
     }
+
     const docxToHTML = async (reader) => {
       try {
         const res = await mammoth.convertToHtml({arrayBuffer: reader.result});
