@@ -101,7 +101,7 @@ export default function FileConverter() {
       await ffmpeg.writeFile(`${file.name}`, await fetchFile(file));
       await ffmpeg.exec(['-i', `${file.name}`, outputFile]);
       const data = await ffmpeg.readFile(outputFile);
-      setResult(data);
+      return data;
     }
     
     const selectTextConvert = (inputFile) => {
@@ -119,7 +119,7 @@ export default function FileConverter() {
       try {
         const content = await readFile();
         const res = await mammoth.extractRawText({buffer: content});
-        setResult(res.value);
+        return res.value;
       } catch (err) {
         console.error("Error converting file:", err);
       }
@@ -129,46 +129,52 @@ export default function FileConverter() {
       try {
         const content = await readFile();
         const res = await mammoth.convertToHtml({arrayBuffer: content});
-        setResult(res.value);
+        return res.value;
       } catch (err) {
         console.error("Error converting file:", err);
       }
     }
 
-    const pdfToJson = async () => {
+    const parsePDF = async (needRaw) => {
       const content = await readFile();
-      console.log("PDF to HTML conversion");
 
-      const parser = new PDFParser(null, true, "");
-      
-      const res = await new Promise(( resolve, reject) => {
+      const parser = new PDFParser(null, needRaw, "");
+      return new Promise((resolve, reject) => {
         parser.on('pdfParser_dataReady', pdfData => {
-          console.log("PDF data ready");
           resolve(pdfData);
-        }); 
-        
+        });
         parser.on('pdfParser_dataError', err => {
           console.error("Error parsing PDF:", err);
           reject(err);
         });
-        
         parser.parseBuffer(content);
-      })
+      });
+    }
+
+    const pdfToJson = async () => {
+      console.log("PDF to HTML conversion");
+      
+      const res = await parsePDF(false);
 
       const json = JSON.stringify(res);
-      console.log("PDF data:", json);
-      setResult(json);
+      return json;      
 
+    }
+
+    const pdfToTxt = async () => {
+      console.log("PDF to HTML conversion");
+
+      const res = await parsePDF(true);
+      const text = res.MergedTextBlocks.map(block => block.text).join('\n');
+      return text
     }
 
     const docxConvert = async () => {
       switch (outputType) {
         case 'html':
-          await docxToHTML();
-          break;
+          return docxToHTML();
         case 'txt':
-          await docxToText();
-          break;
+          return docxToText();
         default:
           // Do nothing
       }   
@@ -177,8 +183,9 @@ export default function FileConverter() {
     const pdfConvert = async () => {
       switch (outputType) {
         case 'json':
-          await pdfToJson();
-          break;
+          return pdfToJson();
+        case 'txt':
+          return pdfToTxt();
         default:
           // Do nothing
       }
@@ -247,8 +254,10 @@ export default function FileConverter() {
     console.log("Attempting conversion");
     
     if (file && converterRef.current) {
-      await converterRef.current();      
+      const res = await converterRef.current();      
+      setResult(res);
     }
+
   };
 
   const handleDownload = () => {
