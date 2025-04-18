@@ -1,0 +1,267 @@
+diff --git a/node_modules/pdf2json-browser/pdfparser.js b/node_modules/pdf2json-browser/pdfparser.js
+index 963fecf..d04c7b2 100644
+--- a/node_modules/pdf2json-browser/pdfparser.js
++++ b/node_modules/pdf2json-browser/pdfparser.js
+@@ -1,13 +1,39 @@
+-import { kColors, kFontFaces, kFontStyles } from "./lib/pdfconst.js";
++// Patched version of pdfparser.js that works with modern "pdfjs-dist" (≥3.x)
++// -----------------------------------------------------------------------------
++// Key changes
++// 1. Replace the old (non‑existent) `new PDFJS()` constructor with direct use of
++//    `getDocument()` from `pdfjs-dist`.
++// 2. Re‑emit the same high‑level events expected by the original wrapper so that
++//    downstream code keeps working:  "readable", "data", "pdfParser_dataReady",
++//    and "pdfParser_dataError".
++// 3. Provide compatible helpers: getRawTextContent(), getAllFieldsTypes(),
++//    getMergedTextBlocksIfNeeded(), and destroy().  Field extraction/merging is
++//    stubbed but you can extend those sections to match your needs.
++// -----------------------------------------------------------------------------
+ 
+ import { EventEmitter } from "events";
+-import PDFJS from "pdfjs-dist";
++
++// Use the ES‑module build of pdfjs so that webpack can tree‑shake properly.
++import {
++  getDocument,
++  GlobalWorkerOptions,
++} from "pdfjs-dist/legacy/build/pdf.mjs";
++
++// If you bundle with webpack/vite you need an explicit worker entry.
++// The following import automatically resolves to the worker script so
++// GlobalWorkerOptions can inline it. Comment out if you run pdfjs in a
++// separate worker yourself.
++GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.mjs`;
++
++import {
++  kColors,
++  kFontFaces,
++  kFontStyles,
++} from "./lib/pdfconst.js";
+ import { ParserStream } from "./lib/parserstream.js";
+-import nodeUtil from "util";
+ 
+ export default class PDFParser extends EventEmitter {
+-  // inherit from event emitter
+-  //public static
++  // ----- public static -------------------------------------------------------
+   static get colorDict() {
+     return kColors;
+   }
+@@ -18,75 +44,99 @@ export default class PDFParser extends EventEmitter {
+     return kFontStyles;
+   }
+ 
+-  //private static
++  // ----- private static ------------------------------------------------------
+   static #binBuffer = {};
+ 
+-  //private
++  // ----- private instance fields -------------------------------------------
+   #password = "";
+-
+-  #context = null; // service context object, only used in Web Service project; null in command line
+-
+-  #pdfFilePath = null; //current PDF file to load and parse, null means loading/parsing not started
+-  #pdfFileMTime = null; // last time the current pdf was modified, used to recognize changes and ignore cache
+-  #data = null; //if file read success, data is PDF content; if failed, data is "err" object
+-  #PDFJS = null; //will be initialized in constructor
+-
+-  // constructor
+-  constructor(context, needRawText, password) {
+-    //call constructor for super class
++  #context = null; // optional service context (for web‑service builds)
++  #pdfFilePath = null;
++  #pdfFileMTime = null;
++  #data = null; // parsed output object
++
++  // Containers for helper methods
++  #rawTextContent = [];
++  #mergedTextBlocks = [];
++  #allFieldTypes = [];
++
++  // -------------------------------------------------------------------------
++  constructor(context = null, needRawText = false, password = "") {
+     super();
+ 
+-    // private
+-    // service context object, only used in Web Service project; null in command line
++    // store params
+     this.#context = context;
+-
+-    this.#pdfFilePath = null; //current PDF file to load and parse, null means loading/parsing not started
+-    this.#pdfFileMTime = null; // last time the current pdf was modified, used to recognize changes and ignore cache
+-    this.#data = null; //if file read success, data is PDF content; if failed, data is "err" object
+-
+-    this.#PDFJS = new PDFJS(needRawText);
+     this.#password = password;
++
++    // expose whether caller wants glyph‑level info. We still collect it to keep
++    // the original API but skip some heavy props if not requested.
++    this._needRawText = !!needRawText;
+   }
+ 
+-  //private methods, needs to invoked by [funcName].call(this, ...)
+-  #onPDFJSParseDataReady(data) {
+-    if (!data) {
+-      //v1.1.2: data===null means end of parsed data
+-      nodeUtil.p2jinfo("PDF parsing completed.");
+-      this.emit("pdfParser_dataReady", this.#data);
+-    } else {
+-      this.#data = { ...this.#data, ...data };
+-    }
++  // -------------------------------------------------------------------------
++  // Event helpers (private)
++  #onParseComplete() {
++    this.emit("pdfParser_dataReady", this.#data);
+   }
+ 
+-  #onPDFJSParserDataError(err) {
++  #onParseError(err) {
+     this.#data = null;
+     this.emit("pdfParser_dataError", { parserError: err });
+-    // this.emit("error", err);
+   }
+ 
+-  #startParsingPDF(buffer) {
+-    this.#data = {};
+-
+-    this.#PDFJS.on("pdfjs_parseDataReady", (data) =>
+-      this.#onPDFJSParseDataReady(data)
+-    );
+-    this.#PDFJS.on("pdfjs_parseDataError", (err) =>
+-      this.#onPDFJSParserDataError(err)
+-    );
+-
+-    //v1.3.0 the following Readable Stream-like events are replacement for the top two custom events
+-    this.#PDFJS.on("readable", (meta) => this.emit("readable", meta));
+-    this.#PDFJS.on("data", (data) => this.emit("data", data));
+-    this.#PDFJS.on("error", (err) => this.#onPDFJSParserDataError(err));
+-
+-    this.#PDFJS.parsePDFData(
+-      buffer || PDFParser.#binBuffer[this.binBufferKey],
+-      this.#password
+-    );
++  // -------------------------------------------------------------------------
++  // Core parsing entry point (private)
++  async #startParsingPDF(buffer) {
++    try {
++      // =============== Load document =============================
++      const loadingTask = getDocument({ data: buffer, password: this.#password });
++      const pdfDoc = await loadingTask.promise;
++
++      // Emit basic metadata as soon as we know it
++      this.emit("readable", { numPages: pdfDoc.numPages });
++
++      // =============== Iterate pages =============================
++      for (let i = 1; i <= pdfDoc.numPages; i++) {
++        const page = await pdfDoc.getPage(i);
++
++        // Raw text extraction (glyph‑level) ----------------------
++        const textContent = await page.getTextContent();
++        if (this._needRawText) this.#rawTextContent.push(textContent);
++
++        // Example of simple text merging: join by lines ----------
++        const mergedLines = textContent.items
++          .map((item) => item.str)
++          .join(" ");
++        this.#mergedTextBlocks.push({ pageNumber: i, text: mergedLines });
++
++        // Emit page‑level chunk for stream consumers -------------
++        this.emit("data", {
++          pageNumber: i,
++          textContent: this._needRawText ? textContent : undefined,
++          mergedText: mergedLines,
++        });
++      }
++
++      // TODO: form fields/annotations extraction -----------------
++      // pdfDoc.getFieldObjects() only exists in Mozilla's fork; adjust if you
++      // depend on actual AcroForm data.  For now we leave an empty array so
++      // existing callers don't crash.
++
++      // =============== Build output =============================
++      this.#data = {
++        Meta: { numPages: pdfDoc.numPages },
++        RawTextContent: this.#rawTextContent,
++        MergedTextBlocks: this.#mergedTextBlocks,
++        Fields: this.#allFieldTypes,
++      };
++
++      this.#onParseComplete();
++    } catch (err) {
++      this.#onParseError(err);
++    }
+   }
+ 
+-  //public getter
++  // -------------------------------------------------------------------------
++  // Public getters
+   get data() {
+     return this.#data;
+   }
+@@ -94,44 +144,45 @@ export default class PDFParser extends EventEmitter {
+     return this.#pdfFilePath + this.#pdfFileMTime;
+   }
+ 
+-  //public APIs
++  // -------------------------------------------------------------------------
++  // Public API: create a Transform stream that accepts PDF buffers
+   createParserStream() {
+     return new ParserStream(this, { objectMode: true, bufferSize: 64 * 1024 });
+   }
+ 
+-  // Introduce a way to directly process buffers without the need to write it to a temporary file
++  // Direct buffer parse (no temp files)
+   parseBuffer(pdfBuffer) {
+     this.#startParsingPDF(pdfBuffer);
+   }
+ 
++  // ----- helper getters (backwards‑compatible) -----------------------------
+   getRawTextContent() {
+-    return this.#PDFJS.getRawTextContent();
++    return this.#rawTextContent;
+   }
+   getRawTextContentStream() {
+     return ParserStream.createContentStream(this.getRawTextContent());
+   }
+ 
+   getAllFieldsTypes() {
+-    return this.#PDFJS.getAllFieldsTypes();
++    return this.#allFieldTypes;
+   }
+   getAllFieldsTypesStream() {
+     return ParserStream.createContentStream(this.getAllFieldsTypes());
+   }
+ 
+   getMergedTextBlocksIfNeeded() {
+-    return this.#PDFJS.getMergedTextBlocksIfNeeded();
++    return this.#mergedTextBlocks;
+   }
+   getMergedTextBlocksStream() {
+     return ParserStream.createContentStream(this.getMergedTextBlocksIfNeeded());
+   }
+ 
++  // -------------------------------------------------------------------------
+   destroy() {
+-    // invoked with stream transform process
+     super.removeAllListeners();
+ 
+-    //context object will be set in Web Service project, but not in command line utility
+     if (this.#context) {
+-      this.#context.destroy();
++      this.#context.destroy?.();
+       this.#context = null;
+     }
+ 
+@@ -139,7 +190,9 @@ export default class PDFParser extends EventEmitter {
+     this.#pdfFileMTime = null;
+     this.#data = null;
+ 
+-    this.#PDFJS.destroy();
+-    this.#PDFJS = null;
++    // Release large arrays for GC
++    this.#rawTextContent = [];
++    this.#mergedTextBlocks = [];
++    this.#allFieldTypes = [];
+   }
+ }
