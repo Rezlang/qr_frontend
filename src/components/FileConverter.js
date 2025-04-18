@@ -171,7 +171,6 @@ const FileConverter = () => {
       </UploadBox>
       <Button
         variant="contained"
-        color="primary"
         onClick={handleConvert}
         disabled={!file}
       >

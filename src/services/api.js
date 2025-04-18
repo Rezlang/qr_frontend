@@ -120,3 +120,11 @@ export const fetchCreationDate = async (shortenedUrl) => {
 
     return response.json();
 }
+
+export const fetchFullAnalytics = async (shortenedUrl) => {
+  const response = await fetch(`http://${APIURL}/analytics/${shortenedUrl}/full-analytics`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch full analytics data');
+  }
+  return response.json();
+}

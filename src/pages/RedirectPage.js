@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { fetchOriginalUrl, fetchSalt, fetchHash } from '../services/api';
+import AppTheme from '../components/signin/theme/AppTheme';
 
-const Redirector = () => {
+const Redirector = (props) => {
   const { shortenedUrl } = useParams();
   const [password, setPassword] = useState('');
   const [needsPassword, setNeedsPassword] = useState(false);
@@ -75,24 +76,28 @@ const Redirector = () => {
   if (error) return <div>{error}</div>;
 
   return needsPassword ? (
-    <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-      <h2>This URL is password protected</h2>
-      <TextField
-        label="Enter Password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <Button
-        variant="outlined"
-        onClick={handlePasswordSubmit}
-        style={{ marginLeft: '1rem' }}
-      >
-        Submit
-      </Button>
-    </div>
+    <AppTheme {...props}>
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <h2>This URL is password protected</h2>
+        <TextField
+          label="Enter Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <Button
+          variant="outlined"
+          onClick={handlePasswordSubmit}
+          style={{ marginLeft: '1rem' }}
+        >
+          Submit
+        </Button>
+      </div>
+    </AppTheme>
   ) : (
-    <div>Loading...</div>
+    <AppTheme {...props}>
+      <div>Loading...</div>
+    </AppTheme>
   );
 };
 

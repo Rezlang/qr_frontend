@@ -1,7 +1,6 @@
 // src/components/QRGenerator.js
 import React, { useState, useRef } from 'react';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
+import { TextField, Button, Card } from '@mui/material';
 import { shortenUrl } from '../../services/api';
 import QRCode from 'react-qr-code';
 import { HuePicker } from 'react-color';
@@ -117,7 +116,7 @@ const QRGenerator = () => {
   };
 
   return (
-    <div className="qr-gen">
+    <Card className="qr-gen">
       <h1>Generate QR</h1>
       <div className="input-line">
         <TextField
@@ -205,7 +204,7 @@ const QRGenerator = () => {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 

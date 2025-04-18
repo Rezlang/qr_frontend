@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  fetchReferrers,
-  fetchAccessDates,
-  fetchUniqueVisitors,
-  fetchHourlyPatterns,
-  fetchOriginalURLNoRedirect,
+  fetchFullAnalytics
 } from '../../services/api';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import {
@@ -19,6 +15,15 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js';
+import {
+  Container,
+  Grid2 as Grid,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Box,
+} from '@mui/material';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement);
@@ -37,20 +42,13 @@ const Analytics = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [refData, datesData, uniqueVisitors, hourlyPatterns, originalURL] = await Promise.all([
-          fetchReferrers(shortenedUrl),
-          fetchAccessDates(shortenedUrl),
-          fetchUniqueVisitors(shortenedUrl),
-          fetchHourlyPatterns(shortenedUrl),
-          fetchOriginalURLNoRedirect(shortenedUrl),
-        ]);
-
+        const data = await fetchFullAnalytics(shortenedUrl);
         setAnalyticsData({
-          referrersData: refData.referrers,
-          accessDatesData: datesData.access_dates,
-          uniqueVisitorsData: uniqueVisitors,
-          hourlyPatternsData: hourlyPatterns,
-          originalURLData: originalURL,
+          referrersData: data.referrers,
+          accessDatesData: data.access_dates,
+          uniqueVisitorsData: data.unique_visitors,
+          hourlyPatternsData: data.hourly_patterns,
+          originalURLData: data.original_url,
         });
       } catch (err) {
         setError(err.message);
@@ -60,10 +58,22 @@ const Analytics = () => {
     fetchAnalytics();
   }, [shortenedUrl]);
 
-  if (error) return <div>Error: {error}</div>;
-  if (!analyticsData.referrersData || !analyticsData.accessDatesData) return <div>Loading analytics...</div>;
+  if (error) return <Typography color="error">Error: {error}</Typography>;
+  if (
+    !analyticsData.referrersData ||
+    !analyticsData.accessDatesData ||
+    !analyticsData.uniqueVisitorsData ||
+    !analyticsData.hourlyPatternsData ||
+    !analyticsData.originalURLData
+  ) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-  // Prepare data for the Pie Chart (Referrers)
+  // Prepare Pie Chart (Referrers)
   const pieChartData = {
     labels: Object.keys(analyticsData.referrersData),
     datasets: [
@@ -81,7 +91,7 @@ const Analytics = () => {
     ],
   };
 
-  // Prepare data for the Bar Chart (Access Dates)
+  // Prepare Bar Chart (Access Dates)
   const sortedDates = Object.keys(analyticsData.accessDatesData).sort();
   const accessDateChart = {
     labels: sortedDates,
@@ -94,19 +104,18 @@ const Analytics = () => {
     ],
   };
 
-  // Prepare data for the Line Chart (Hourly Patterns)
-  const sortedHours = Object.keys(analyticsData.hourlyPatternsData.hourly_patterns)
-  .map((hour) => Number(hour))
-  .filter((hour) => !isNaN(hour))
-  .sort((a, b) => a - b);
-  
+  // Prepare Line Chart (Hourly Patterns)
+  const sortedHours = Object.keys(analyticsData.hourlyPatternsData)
+    .map((hour) => Number(hour))
+    .filter((hour) => !isNaN(hour))
+    .sort((a, b) => a - b);
+
   const hourlyPatternChart = {
     labels: sortedHours,
     datasets: [
       {
-        data: sortedHours.map((hour) => 
-          Math.max(0, Number(analyticsData.hourlyPatternsData.hourly_patterns[hour]) 
-        || 0)), 
+        data: sortedHours.map((hour) =>
+          Math.max(0, Number(analyticsData.hourlyPatternsData[hour]) || 0)),
         borderColor: "rgba(255,99,132,1)",
         backgroundColor: "rgba(255,99,132,0.2)",
       },
@@ -116,12 +125,12 @@ const Analytics = () => {
   const chartOptions = {
     plugins: {
       legend: {
-        display: false, // Hide legend
+        display: false,
       },
       tooltip: {
         callbacks: {
-          title: () => "", // Hide title in tooltip
-          label: (tooltipItem) => `${tooltipItem.raw}`, // Show only value
+          title: () => "",
+          label: (tooltipItem) => `${tooltipItem.raw}`,
         },
       },
     },
@@ -134,93 +143,68 @@ const Analytics = () => {
       },
     },
   };
-  
+
   return (
-    <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-      <div style={{ maxWidth: '1200px', width: '100%' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Analytics</h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.5rem',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <h3 style={{ textAlign: 'center' }}>Referrer Distribution</h3>
-            <Pie data={pieChartData} />
-          </div>
-          <div
-            style={{
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <h3 style={{ textAlign: 'center' }}>Access Dates Histogram</h3>
-            <Bar data={accessDateChart} options={chartOptions} />
-          </div>
-          <div
-            style={{
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <h3 style={{ textAlign: 'center' }}>Hourly Access Patterns</h3>
-            <Line data={hourlyPatternChart} options={chartOptions} />
-          </div>
-          <div
-            style={{
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <h3>Unique Visitors: {analyticsData.uniqueVisitorsData.unique_visitors}</h3>
-          </div>
-          <div
-            style={{
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <h3>Short URL: {shortenedUrl}</h3>
-          </div>
-          <div
-            style={{
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <h3>Redirects to: <br /> {analyticsData.originalURLData.url}</h3>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Typography variant="h4" align="center" gutterBottom>
+        Analytics
+      </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" align="center" gutterBottom>
+                Referrer Distribution
+              </Typography>
+              <Pie data={pieChartData} />
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" align="center" gutterBottom>
+                Access Dates Histogram
+              </Typography>
+              <Bar data={accessDateChart} options={chartOptions} />
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" align="center" gutterBottom>
+                Hourly Access Patterns
+              </Typography>
+              <Line data={hourlyPatternChart} options={chartOptions} />
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6">Unique Visitors: {analyticsData.uniqueVisitorsData}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6">Short URL: {shortenedUrl}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CardContent>
+              <Typography variant="h6" align="center">
+                Redirects to:<br />{analyticsData.originalURLData}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Container>
   );
 };
 
