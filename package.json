@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@eisberg-labs/mui-copy-field": "^4.0.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@ffmpeg/ffmpeg": "^0.12.15",
@@ -53,5 +52,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "nth-check": "^2.1.1",
+    "postcss": "^8.4.31"
   }
+  
 }
