@@ -1,9 +1,9 @@
+// FileList.jsx
 import React from "react";
 import {
   IconButton,
   List,
   ListItem,
-  ListItemText,
   Box,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Close";
@@ -21,16 +21,20 @@ const FileList = ({ files, onRemove }) => (
           alignItems: "center",
         }}
       >
+        {/* filename box only as wide as its text */}
         <Box
           sx={{
-            width: 8,
-            height: "100%",
             backgroundColor: entry.color,
+            color: "white",
             borderRadius: 1,
-            mr: 1,
+            p: "2px 6px",
+            mr: 1,          // gap before the X
+            flex: "none",   // prevent flex-grow
           }}
-        />
-        <ListItemText primary={entry.file.name || "Unnamed file"} />
+        >
+          {entry.file.name || "Unnamed file"}
+        </Box>
+
         <IconButton onClick={() => onRemove(idx)} size="small">
           <DeleteIcon fontSize="small" htmlColor="red" />
         </IconButton>

@@ -31,7 +31,7 @@ export const usePDFProcessor = () => {
               new Blob([singlePageBytes], { type: "application/pdf" })
             );
             return {
-              name: `${file.name} (${idx + 1})`,
+              name: file.name.replace(/\.pdf$/i, ""),
               bytes: singlePageBytes,
               previewUrl: pagePreviewUrl,
             };

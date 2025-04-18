@@ -2,10 +2,12 @@
 import { useState, useEffect } from "react";
 import { PDFDocument } from "pdf-lib";
 
-const COLORS = ['#FF8A80', '#EA80FC', '#8C9EFF', '#80D8FF', '#A7FFEB'];
+const COLORS = ['#007CF0', '#FF4D4D', '#00C896', '#FF9900', '#A259FF'];
 
 export const usePDFProcessor = () => {
-  const [pdfFiles, setPdfFiles] = useState([]); 
+  // track which colors are free to assign
+  const [availableColors, setAvailableColors] = useState([...COLORS]);
+  const [pdfFiles, setPdfFiles] = useState([]);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [orderedItems, setOrderedItems] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
@@ -15,16 +17,23 @@ export const usePDFProcessor = () => {
   const gap = 16;
 
   const handleFileUpload = async (files) => {
-    const accepted = files.slice(0, 5 - pdfFiles.length);
+    const slots = 5 - pdfFiles.length;
+    const accepted = Array.from(files).slice(0, slots);
+    if (!accepted.length) return;
+
+    // grab as many colors as we need from the front of the pool
+    const newColors = availableColors.slice(0, accepted.length);
+    const remainingColors = availableColors.slice(accepted.length);
+
     const loaded = await Promise.all(
       accepted.map(async (file, idx) => {
+        const fileColor = newColors[idx];
         const previewUrl = URL.createObjectURL(file);
         const arrayBuffer = await file.arrayBuffer();
         const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-        // extract each page as its own PDF + name it
         const pages = await Promise.all(
-          pdfDoc.getPages().map(async (_, pidx) => {
+          pdfDoc.getPages().map(async (page, pidx) => {
             const newDoc = await PDFDocument.create();
             const [copied] = await newDoc.copyPages(pdfDoc, [pidx]);
             newDoc.addPage(copied);
@@ -37,45 +46,62 @@ export const usePDFProcessor = () => {
               pageNumber: pidx + 1,
               bytes,
               previewUrl: pagePreview,
-              // name shows file + page number
-              name: `${file.name} (${pidx + 1})`,
+              color: fileColor,
+              name: file.name.replace(/\.pdf$/i, ""),
             };
           })
         );
 
-        const color = COLORS[(pdfFiles.length + idx) % COLORS.length];
         return {
           file,
           previewUrl,
           pages,
-          color,
-          // name for the file‐level thumbnail
-          name: file.name,
+          color: fileColor,
+          name: file.name.replace(/\.pdf$/i, ""),
         };
       })
     );
+
+    // update state: add new files, consume colors
     setPdfFiles(prev => [...prev, ...loaded]);
+    setAvailableColors(remainingColors);
   };
 
   const removeFile = (fileIndex) => {
-    setPdfFiles(prev => prev.filter((_, idx) => idx !== fileIndex));
+    setPdfFiles(prev => {
+      const entry = prev[fileIndex];
+      if (entry) {
+        // return its color to the pool
+        setAvailableColors(colors => [...colors, entry.color]);
+      }
+      return prev.filter((_, idx) => idx !== fileIndex);
+    });
   };
 
   const removePage = (fileIndex, originalIndex) => {
-    setPdfFiles(prev =>
-      prev.flatMap((entry, idx) => {
+    setPdfFiles(prev => {
+      let freedColor = null;
+      const newFiles = prev.flatMap((entry, idx) => {
         if (idx !== fileIndex) return entry;
         const newPages = entry.pages.filter(p => p.originalIndex !== originalIndex);
-        return newPages.length ? { ...entry, pages: newPages } : [];
-      })
-    );
+        if (newPages.length) {
+          return { ...entry, pages: newPages };
+        }
+        // if no pages remain, drop the file and free its color
+        freedColor = entry.color;
+        return [];
+      });
+      if (freedColor) {
+        setAvailableColors(colors => [...colors, freedColor]);
+      }
+      return newFiles;
+    });
   };
 
   const toggleMode = () => setAdvancedMode(m => !m);
 
   useEffect(() => {
     if (advancedMode) {
-      // flatten pages
       const flat = pdfFiles.flatMap((entry, fidx) =>
         entry.pages.map(page => ({
           id: `page-${fidx}-${page.originalIndex}`,
@@ -93,7 +119,6 @@ export const usePDFProcessor = () => {
         flat.map((item, i) => ({ ...item, x: i * (itemWidth + gap) }))
       );
     } else {
-      // file‐level thumbnails
       const items = pdfFiles.map((entry, fidx) => ({
         id: `file-${fidx}`,
         type: "file",
@@ -108,39 +133,27 @@ export const usePDFProcessor = () => {
     }
   }, [pdfFiles, advancedMode, itemWidth, gap]);
 
-  const handleDragStart = (_, __, id) => {
-    setDraggingId(id);
-  };
-
+  const handleDragStart = (_, __, id) => setDraggingId(id);
   const handleDrag = (_, data, id) => {
     if (draggingId !== id) setDraggingId(id);
-    setOrderedItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, x: data.x } : item
-      )
+    setOrderedItems(prev =>
+      prev.map(item => item.id === id ? { ...item, x: data.x } : item)
     );
   };
-
   const handleStop = (_, data, id) => {
-    setOrderedItems((prev) => {
-      const startIndex = prev.findIndex((i) => i.id === id);
+    setOrderedItems(prev => {
+      const start = prev.findIndex(i => i.id === id);
       const threshold = (itemWidth + gap) / 2;
-      const newIndex = Math.min(
+      const dest = Math.min(
         prev.length - 1,
-        Math.max(
-          0,
-          Math.floor((data.x + threshold) / (itemWidth + gap))
-        )
+        Math.max(0, Math.floor((data.x + threshold) / (itemWidth + gap)))
       );
       const items = [...prev];
-      if (newIndex !== startIndex) {
-        const [moved] = items.splice(startIndex, 1);
-        items.splice(newIndex, 0, moved);
+      if (dest !== start) {
+        const [moved] = items.splice(start, 1);
+        items.splice(dest, 0, moved);
       }
-      return items.map((item, i) => ({
-        ...item,
-        x: i * (itemWidth + gap),
-      }));
+      return items.map((it, i) => ({ ...it, x: i * (itemWidth + gap) }));
     });
     setDraggingId(null);
   };
@@ -157,11 +170,8 @@ export const usePDFProcessor = () => {
       for (const entry of pdfFiles) {
         const buffer = await entry.file.arrayBuffer();
         const loaded = await PDFDocument.load(buffer);
-        const copied = await newPdf.copyPages(
-          loaded,
-          loaded.getPageIndices()
-        );
-        copied.forEach((p) => newPdf.addPage(p));
+        const copied = await newPdf.copyPages(loaded, loaded.getPageIndices());
+        copied.forEach(p => newPdf.addPage(p));
       }
     }
     const pdfBytes = await newPdf.save();

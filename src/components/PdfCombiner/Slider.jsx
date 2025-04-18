@@ -121,7 +121,10 @@ const Slider = ({
                 <CloseIcon fontSize="small" htmlColor="red" />
               </IconButton>
 
-              <Box sx={{ width: "100%", height: "calc(100% - 25px)" }}>
+              <Box sx={{
+                width: "100%",
+                height: "calc(80%)",
+              }}>
                 <PDFPreview
                   src={item.previewUrl}
                   advancedMode={advancedMode}
@@ -134,9 +137,10 @@ const Slider = ({
                   textAlign: "center",
                   height: "25px",
                   lineHeight: "25px",
+                  mt: "auto",
+                  color: advancedMode ? "text.primary" : "#fff",
                   ...( !advancedMode && {
-                    border: "1px solid",
-                    borderColor: item.color,
+                    backgroundColor: item.color,
                     borderRadius: 1,
                     px: 0.5,
                   }),
