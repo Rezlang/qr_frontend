@@ -2,7 +2,7 @@
 import React from 'react';
 import UrlShortener from '../components/URLShortener/URLShortener';
 import QRSHeader from '../components/Header/QRSHeader';
-import AppTheme from '../components/signin/theme/AppTheme';
+import AppTheme from '../theme/AppTheme';
 
 const URLShort = (props) => {
   return (

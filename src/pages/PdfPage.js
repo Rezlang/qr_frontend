@@ -1,7 +1,7 @@
 import PdfEditor from "../components/PdfEditor/PdfEditor";
 import React from 'react';
 import QRSHeader from "../components/Header/QRSHeader";
-import AppTheme from "../components/signin/theme/AppTheme";
+import AppTheme from "../theme/AppTheme";
 
 const PdfPage = (props) => {
   return (

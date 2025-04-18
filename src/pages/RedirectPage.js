@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import { fetchOriginalUrl, fetchSalt, fetchHash } from '../services/api';
-import AppTheme from '../components/signin/theme/AppTheme';
+import AppTheme from '../theme/AppTheme';
 
 const Redirector = (props) => {
   const { shortenedUrl } = useParams();

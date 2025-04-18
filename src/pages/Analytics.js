@@ -1,7 +1,7 @@
 // src/pages/Analytics.js
 import React from 'react';
 import QRSHeader from '../components/Header/QRSHeader';
-import AppTheme from '../components/signin/theme/AppTheme';
+import AppTheme from '../theme/AppTheme';
 
 const Analytics = (props) => {
 

@@ -2,8 +2,8 @@ import React from "react";
 import { AppBar, Toolbar, Typography, Box } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import AccountPopover from "./AccountPopover";
-import ColorModeToggle from "../signin/theme/ColorModeToggle";
-import AppTheme from "../signin/theme/AppTheme"
+import ColorModeToggle from "../../theme/ColorModeToggle";
+import AppTheme from "../../theme/AppTheme"
 
 export default function QRSHeader(props) {
     const navigate = useNavigate();

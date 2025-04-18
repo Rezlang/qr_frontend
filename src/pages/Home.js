@@ -3,7 +3,7 @@ import React from 'react';
 import QRSHeader
   from '../components/Header/QRSHeader';
 import HomeTables from '../components/HomeTables';
-import AppTheme from '../components/signin/theme/AppTheme';
+import AppTheme from '../theme/AppTheme';
 
 const Home = (props) => {
   return (

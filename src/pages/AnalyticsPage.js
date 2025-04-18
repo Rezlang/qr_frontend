@@ -2,7 +2,7 @@
 import React from 'react';
 import Analytics from '../components/Analytics/Analytics';
 import QRSHeader from '../components/Header/QRSHeader';
-import AppTheme from '../components/signin/theme/AppTheme';
+import AppTheme from '../theme/AppTheme';
 
 const AnalyticsPage = (props) => {
   return (
