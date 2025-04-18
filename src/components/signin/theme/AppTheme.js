@@ -1,56 +1,41 @@
+// src/AppTheme.js
 import * as React from 'react';
 import PropTypes from 'prop-types';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { ColorModeContext } from './ColorModeContext';
 
-import { inputsCustomizations } from './customizations/inputs';
-import { dataDisplayCustomizations } from './customizations/dataDisplay';
-import { feedbackCustomizations } from './customizations/feedback';
-import { navigationCustomizations } from './customizations/navigation';
-import { surfacesCustomizations } from './customizations/surfaces';
-import { colorSchemes, typography, shadows, shape } from './themePrimitives';
+export default function AppTheme({ children, defaultMode = 'light' }) {
+  const [mode, setMode] = React.useState(defaultMode);
+  const colorMode = React.useMemo(
+    () => ({
+      toggleColorMode: () => {
+        setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
+      },
+    }),
+    [],
+  );
 
-function AppTheme(props) {
-  const { children, disableCustomTheme, themeComponents } = props;
-  const theme = React.useMemo(() => {
-    return disableCustomTheme
-      ? {}
-      : createTheme({
-          // For more details about CSS variables configuration, see https://mui.com/material-ui/customization/css-theme-variables/configuration/
-          cssVariables: {
-            colorSchemeSelector: 'data-mui-color-scheme',
-            cssVarPrefix: 'template',
-          },
-          colorSchemes, // Recently added in v6 for building light & dark mode app, see https://mui.com/material-ui/customization/palette/#color-schemes
-          typography,
-          shadows,
-          shape,
-          components: {
-            ...inputsCustomizations,
-            ...dataDisplayCustomizations,
-            ...feedbackCustomizations,
-            ...navigationCustomizations,
-            ...surfacesCustomizations,
-            ...themeComponents,
-          },
-        });
-  }, [disableCustomTheme, themeComponents]);
-  if (disableCustomTheme) {
-    return <React.Fragment>{children}</React.Fragment>;
-  }
+  // Re‑create the theme only when `mode` changes
+  const theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: { mode },
+      }),
+    [mode],
+  );
+
   return (
-    <ThemeProvider theme={theme} disableTransitionOnChange>
-      {children}
-    </ThemeProvider>
+    <ColorModeContext.Provider value={colorMode}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
+    </ColorModeContext.Provider>
   );
 }
 
 AppTheme.propTypes = {
-  children: PropTypes.node,
-  /**
-   * This is for the docs site. You can ignore it or remove it.
-   */
-  disableCustomTheme: PropTypes.bool,
-  themeComponents: PropTypes.object,
+  children:    PropTypes.node.isRequired,
+  defaultMode: PropTypes.oneOf(['light','dark']),
 };
-
-export default AppTheme;

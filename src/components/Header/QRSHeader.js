@@ -2,7 +2,7 @@ import React from "react";
 import { AppBar, Toolbar, Typography, Box } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import AccountPopover from "./AccountPopover";
-import ColorModeSelect from "../signin/theme/ColorModeSelect";
+import ColorModeToggle from "../signin/theme/ColorModeToggle";
 import AppTheme from "../signin/theme/AppTheme"
 
 export default function QRSHeader(props) {
@@ -52,9 +52,9 @@ export default function QRSHeader(props) {
                         ))}
                     </Box>
 
-                    {/* Right Section: ColorModeSelect and AccountPopover */}
+                    {/* Right Section: ColorModeToggle and AccountPopover */}
                     <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 2 }}>
-                        <ColorModeSelect /> {/* Add the ColorModeSelect component */}
+                        <ColorModeToggle /> {/* Add the ColorModeToggle component */}
                         <AccountPopover />
                     </Box>
                 </Toolbar>
