@@ -4,6 +4,7 @@ import { styled } from '@mui/system';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import mammoth from 'mammoth';
+import PDFParser from 'pdf2json-browser';
 
 const UploadBox = styled(Box)({
   border: '2px dashed #ccc',
@@ -37,6 +38,7 @@ const ffmpegMap = {
 
 const textMap = {
   'docx': ['txt', 'html'],
+  'pdf': ['json', 'txt']
 }
 
 const mimeTypes = {
@@ -56,7 +58,9 @@ const mimeTypes = {
   'html': 'text/html',
   'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'pdf': 'application/pdf',
+  'json': 'application/json',
 }
+
 
 export default function FileConverter() {
   const [file, setFile] = useState(null);
@@ -79,6 +83,15 @@ export default function FileConverter() {
   useEffect(() => {
     if (!inputType) return;
 
+    const readFile = async () => {
+      const reader = new FileReader();
+      return new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
     const ffmpegConvert = async () => {
       await load();
       
@@ -94,46 +107,85 @@ export default function FileConverter() {
     const selectTextConvert = (inputFile) => {
       switch (inputFile) {
         case 'docx':
-          return mammothConvert;
+          return docxConvert;
+        case 'pdf':
+          return pdfConvert;
         default:
           return null;
       }
     }
 
-    const docxToText = async (reader) => {
+    const docxToText = async () => {
       try {
-        const res = await mammoth.extractRawText({arrayBuffer: reader.result});
+        const content = await readFile();
+        const res = await mammoth.extractRawText({buffer: content});
         setResult(res.value);
       } catch (err) {
         console.error("Error converting file:", err);
       }
     }
 
-    const docxToHTML = async (reader) => {
+    const docxToHTML = async () => {
       try {
-        const res = await mammoth.convertToHtml({arrayBuffer: reader.result});
+        const content = await readFile();
+        const res = await mammoth.convertToHtml({arrayBuffer: content});
         setResult(res.value);
       } catch (err) {
         console.error("Error converting file:", err);
       }
     }
 
-    const mammothConvert = async () => {
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(file);
-      reader.onload = async () => {
-        switch (outputType) {
-          case 'html':
-            await docxToHTML(reader);
-            break;
-          case 'txt':
-            await docxToText(reader);
-            break;
-          default:
-        } 
+    const pdfToJson = async () => {
+      const content = await readFile();
+      console.log("PDF to HTML conversion");
+
+      const parser = new PDFParser(null, true, "");
+      
+      const res = await new Promise(( resolve, reject) => {
+        parser.on('pdfParser_dataReady', pdfData => {
+          console.log("PDF data ready");
+          resolve(pdfData);
+        }); 
+        
+        parser.on('pdfParser_dataError', err => {
+          console.error("Error parsing PDF:", err);
+          reject(err);
+        });
+        
+        parser.parseBuffer(content);
+      })
+
+      const json = JSON.stringify(res);
+      console.log("PDF data:", json);
+      setResult(json);
+
+    }
+
+    const docxConvert = async () => {
+      switch (outputType) {
+        case 'html':
+          await docxToHTML();
+          break;
+        case 'txt':
+          await docxToText();
+          break;
+        default:
+          // Do nothing
+      }   
+    }
+
+    const pdfConvert = async () => {
+      switch (outputType) {
+        case 'json':
+          await pdfToJson();
+          break;
+        default:
+          // Do nothing
       }
     }
 
+    // Select based on input type, so that we can check output type
+    // only when the user clicks convert
     if (ffmpegMap[inputType]) {
       mapRef.current = ffmpegMap;
       converterRef.current = ffmpegConvert;
