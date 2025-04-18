@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  fetchReferrers,
-  fetchAccessDates,
-  fetchUniqueVisitors,
-  fetchHourlyPatterns,
-  fetchOriginalURLNoRedirect,
+  fetchFullAnalytics
 } from '../../services/api';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import {
@@ -46,20 +42,13 @@ const Analytics = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [refData, datesData, uniqueVisitors, hourlyPatterns, originalURL] = await Promise.all([
-          fetchReferrers(shortenedUrl),
-          fetchAccessDates(shortenedUrl),
-          fetchUniqueVisitors(shortenedUrl),
-          fetchHourlyPatterns(shortenedUrl),
-          fetchOriginalURLNoRedirect(shortenedUrl),
-        ]);
-
+        const data = await fetchFullAnalytics(shortenedUrl);
         setAnalyticsData({
-          referrersData: refData.referrers,
-          accessDatesData: datesData.access_dates,
-          uniqueVisitorsData: uniqueVisitors,
-          hourlyPatternsData: hourlyPatterns,
-          originalURLData: originalURL,
+          referrersData: data.referrers,
+          accessDatesData: data.access_dates,
+          uniqueVisitorsData: data.unique_visitors,
+          hourlyPatternsData: data.hourly_patterns,
+          originalURLData: data.original_url,
         });
       } catch (err) {
         setError(err.message);
@@ -70,7 +59,13 @@ const Analytics = () => {
   }, [shortenedUrl]);
 
   if (error) return <Typography color="error">Error: {error}</Typography>;
-  if (!analyticsData.referrersData || !analyticsData.accessDatesData) {
+  if (
+    !analyticsData.referrersData ||
+    !analyticsData.accessDatesData ||
+    !analyticsData.uniqueVisitorsData ||
+    !analyticsData.hourlyPatternsData ||
+    !analyticsData.originalURLData
+  ) {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
         <CircularProgress />
@@ -110,7 +105,7 @@ const Analytics = () => {
   };
 
   // Prepare Line Chart (Hourly Patterns)
-  const sortedHours = Object.keys(analyticsData.hourlyPatternsData.hourly_patterns)
+  const sortedHours = Object.keys(analyticsData.hourlyPatternsData)
     .map((hour) => Number(hour))
     .filter((hour) => !isNaN(hour))
     .sort((a, b) => a - b);
@@ -120,7 +115,7 @@ const Analytics = () => {
     datasets: [
       {
         data: sortedHours.map((hour) =>
-          Math.max(0, Number(analyticsData.hourlyPatternsData.hourly_patterns[hour]) || 0)),
+          Math.max(0, Number(analyticsData.hourlyPatternsData[hour]) || 0)),
         borderColor: "rgba(255,99,132,1)",
         backgroundColor: "rgba(255,99,132,0.2)",
       },
@@ -188,7 +183,7 @@ const Analytics = () => {
         <Grid item xs={12} md={4}>
           <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <CardContent>
-              <Typography variant="h6">Unique Visitors: {analyticsData.uniqueVisitorsData.unique_visitors}</Typography>
+              <Typography variant="h6">Unique Visitors: {analyticsData.uniqueVisitorsData}</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -203,7 +198,7 @@ const Analytics = () => {
           <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <CardContent>
               <Typography variant="h6" align="center">
-                Redirects to:<br />{analyticsData.originalURLData.url}
+                Redirects to:<br />{analyticsData.originalURLData}
               </Typography>
             </CardContent>
           </Card>
