@@ -2,7 +2,7 @@
 import React from 'react';
 import QRSHeader
  from '../components/Header/QRSHeader';
-import HomeTables from '../components/HomeTables';
+import HomeTables from '../components/Home/HomeTables';
 const Home = () => {
   return (
     <div className="App">
