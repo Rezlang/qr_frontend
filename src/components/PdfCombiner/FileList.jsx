@@ -28,11 +28,12 @@ const FileList = ({ files, onRemove }) => (
             color: "white",
             borderRadius: 1,
             p: "2px 6px",
-            mr: 1,          // gap before the X
-            flex: "none",   // prevent flex-grow
+
+            mr: 1,
+            flex: "none",
           }}
         >
-          {entry.file.name || "Unnamed file"}
+          {entry.file.name.replace(/\.pdf$/i, "") || "Unnamed file"}
         </Box>
 
         <IconButton onClick={() => onRemove(idx)} size="small">

@@ -1,7 +1,7 @@
 // src/components/UrlShortener.js
 import React, { useState } from 'react';
 import { TextField, Button, Card } from '@mui/material';
-import { DefaultCopyField } from '@eisberg-labs/mui-copy-field';
+import CopyField from '../CopyField/CopyField';
 import { getAuth } from 'firebase/auth';
 import { shortenUrl } from '../../services/api';
 import './URLShortener.css';
@@ -107,7 +107,7 @@ const UrlShortener = () => {
           Submit URL
         </Button>
       </div>
-      <DefaultCopyField
+      <CopyField
         ReadOnly
         id="url-response"
         label="Copy Short URL"
