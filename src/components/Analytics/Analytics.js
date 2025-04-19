@@ -150,7 +150,7 @@ const Analytics = () => {
         Analytics
       </Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
@@ -160,7 +160,7 @@ const Analytics = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
@@ -170,7 +170,7 @@ const Analytics = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12}>
+        <Grid item size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
@@ -180,21 +180,21 @@ const Analytics = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item size={{ xs: 12, sm: 6, md: 4 }}>
           <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <CardContent>
               <Typography variant="h6">Unique Visitors: {analyticsData.uniqueVisitorsData}</Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item size={{ xs: 12, sm: 6, md: 4 }}>
           <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <CardContent>
               <Typography variant="h6">Short URL: {shortenedUrl}</Typography>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item size={{ xs: 12, sm: 6, md: 4 }}>
           <Card sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <CardContent>
               <Typography variant="h6" align="center">
